@@ -1,4 +1,4 @@
-function [us] = get_us(x, t, N, xim, xip, lij, k_tr, k, w, Omega, rs, ks, vr, sol, w0)
+function [us] = get_us(x, t, N, xim, xip, lij, k_tr, v0, w, Omega, rs, ks, vr, sol, w0)
 %GET_US Get the scattered wave evaluated at x at time t.
 %   x:      evaluation point
 %   t:      evaluation time
@@ -7,7 +7,7 @@ function [us] = get_us(x, t, N, xim, xip, lij, k_tr, k, w, Omega, rs, ks, vr, so
 %   xip:    right boundary points of all resonators
 %   lij:    spacing between the resonators
 %   k_tr:   truncation parameter
-%   k:      wavenumber outside the resonators
+%   v0:     wave speed outside of the resonators
 %   w:      quasiwavefrequency \omega
 %   Omega:  period of time modulations
 %   rs:     Fourier coefficients of \rho_i(t)
@@ -18,7 +18,8 @@ function [us] = get_us(x, t, N, xim, xip, lij, k_tr, k, w, Omega, rs, ks, vr, so
 
     us = 0;
     for n = -k_tr:k_tr
-        us = us + operator_S(x, N, xim, xip, lij, k_tr, k, w, Omega, rs, ks, vr, sol, n)*exp(sqrt(-1)*(n*Omega+w0)*t);
+        kn = (w+n*Omega)/v0;
+        us = us + operator_S(x, N, xim, xip, lij, k_tr, kn, w, Omega, rs, ks, vr, sol, n)*exp(sqrt(-1)*(n*Omega+w0)*t);
     end
 
 end

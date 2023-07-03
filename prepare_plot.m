@@ -27,10 +27,21 @@ function [us, xs] = prepare_plot(k_tr,li,lij,L,N,Omega,delta,phase_kappa,phase_r
     end
 
     % Find quasifrequencies
-    C = make_capacitance_finite(N,lij);
-    w_out = get_capacitance_approx(epsilon_kappa,epsilon_rho,li,Omega,phase_rho,phase_kappa,delta,C);
-    w_muller = w_out(real(w_out)>=0);
-    
+    if N > 1
+        C = make_capacitance_finite(N,lij);
+        w_res = get_capacitance_approx(epsilon_kappa,epsilon_rho,li,Omega,phase_rho,phase_kappa,delta,C);
+        w_muller = w_res(real(w_res)>=0);
+    else
+        guess = zeros(1,2);
+        guess(2) = -(v0*vr*log((delta^2*vr^2 + 2*delta*v0*vr + v0^2)/(v0 - delta*vr)^2)*sqrt(-1))/(li(1)*(v0 + vr));%-sqrt(-1)*vr*log(1+2*vr*delta/(v0-vr*delta));
+        w_res = zeros(1,2);
+        
+        for j = 1:2*N
+            w_res(j) = muller(guess(j),N,lij,xm,xp,k_tr,Omega,rs,ks,vr,delta,v0);
+        end
+        w_muller = w_res(2);
+    end
+        
     % compute with muller's method 
 %     for i = 1:N
 %         initial_guess = w_res(i);
@@ -49,19 +60,18 @@ function [us, xs] = prepare_plot(k_tr,li,lij,L,N,Omega,delta,phase_kappa,phase_r
     end
     
     t = 0;
-    w = mean(w_muller) + 0.0001;
-    k = w_muller(1)/v0;
+    w0 = mean(w_res);
+    w = w0 + 0.0001; %quasifrequency of incident wave
+    k = w/v0;
+    k_0 = w0/v0; %wave number of incident wave
     
     for i = 1:ls
         for j = 1:N
 
-            w0 = w_muller(j);
-            k_0 = w0/v0;
-
             A = getMatcalA(N, lij, xm, xp, k_tr, w, Omega, rs, ks, vr, delta, v0);
             F = getF(k_tr, N, delta, k, k_0, xm);
             sol = linsolve(A,F);
-            us(i) = us(i) + get_us(xs(i), t, N, xm, xp, lij, k_tr, k, w, Omega, rs, ks, vr, sol, w0);
+            us(i) = us(i) + get_us(xs(i), t, N, xm, xp, lij, k_tr, v0, w, Omega, rs, ks, vr, sol, w0);
 
         end
     end

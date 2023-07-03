@@ -14,15 +14,16 @@ function [u] = operator_S(x, N, xim, xip, lij, k_tr, k, w, Omega, rs, ks, vr, so
 %   vr:     wave speed inside the resonators
 %   sol:    coefficients of the interior solution
 
+
     if x >= xip(end)
         i = N;
         a = 0;
         for j = -k_tr:k_tr
             l = ll(j, i, k_tr, w, Omega, rs, ks, vr);
             v = vs(j, n, i, k_tr, w, Omega, rs, ks, vr);
-            a = a + exp(-sqrt(-1)*k*xip(end))*((sol(2*N*(k_tr-j)+2*i-1)*exp(sqrt(-1)*l*xip(end))+sol(2*N*(k_tr-j)+2*i)*exp(-sqrt(-1)*l*xip(end)))*v); 
+            a = a + ((sol(2*N*(k_tr-j)+2*i-1)*exp(sqrt(-1)*l*xip(end))+sol(2*N*(k_tr-j)+2*i)*exp(-sqrt(-1)*l*xip(end)))*v); 
         end
-        u = a*exp(sqrt(-1)*k*x);
+        u = a*exp(sqrt(-1)*k*(x-xip(end)));
     elseif x <= xim(1)
         i = 1;
         b = 0;
