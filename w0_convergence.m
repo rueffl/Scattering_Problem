@@ -4,8 +4,8 @@ format long
 k_tr = 4; % truncation parameters as in remark 3.3
 N = 6; % number of the resonator
 li = ones(1,N).*0.025; % length of the resonators
-lij_s = linspace(0.5,500000,100); % distance between the resonators
-delta = 0.0001; % small contrast parameter
+lij_s = linspace(500,500000,100); % distance between the resonators
+delta = 0.000001; % small contrast parameter
 
 vr = 1;
 v0 = 1;
@@ -39,13 +39,14 @@ for len = lij_s
     lij = ones(1,N-1).*len;
     C = make_capacitance_finite(N,lij);
     w_out = get_capacitance_approx(epsilon_kappa,epsilon_rho,li,Omega,phase_rho,phase_kappa,delta,C);
-    plot(ones(1,2*N).*len,w_out,'k.',markersize=8)
+    plot(ones(1,2*N).*len,real(w_out),'k.',markersize=8)
     all_w(j,:) = w_out;
     j = j+1;
 end
 
-w1 = -sqrt(-1)*vr*log(1+2*vr*delta/(v0-vr*delta));
-plot(len,w1,'r*')
+% w1 = -sqrt(-1)*vr*log(1+2*vr*delta/(v0-vr*delta));
+w1 = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,lij_s(1),delta,vr,v0);
+plot(lij_s(end),imag(w1),'r*')
 
 xlabel('$\ell_{i(i+1)}$',interpreter='latex',fontsize=20)
 ylabel('$\omega_j$',interpreter='latex',fontsize=20)
@@ -58,6 +59,7 @@ format long
 k_tr = 2; % truncation parameters as in remark 3.3
 N = 1; % number of the resonator
 lij = ones(1,N-1); % spacing between the resonators
+len = 1;
 li = ones(1,N).*len; % length of the resonator
 xm = 0; xp = xm+li(1);
 delta = 0.0001; % small contrast parameter
@@ -87,7 +89,7 @@ end
 
 guess = zeros(1,2);
 guess(2) = -(v0*vr*log((delta^2*vr^2 + 2*delta*v0*vr + v0^2)/(v0 - delta*vr)^2)*sqrt(-1))/(li(1)*(v0 + vr));%-sqrt(-1)*vr*log(1+2*vr*delta/(v0-vr*delta));
-w_out = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,phase_kappa,Omega,len,delta,vr,v0);
+w_out = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0);
 w_res = zeros(1,2);
 for k = 1:2*N
     w_res(k) = muller(guess(k),N,lij,xm,xp,k_tr,Omega,rs,ks,vr,delta,v0);
@@ -133,39 +135,45 @@ for j = 1:N
 end
 
 
-all_w = zeros(length(li_s),2*N);
-approx_w = zeros(length(li_s),2*N);
-w_out = zeros(length(li_s),2*N);
+w_res = zeros(length(li_s),2*N);
+w_approx = zeros(length(li_s),2*N);
 j = 1;
-figure()
 
 for len = li_s
     li = ones(1,N).*len;
     xm = 0; xp = xm+li(1);
-    guess = zeros(1,2);
-    guess(2) = -(v0*vr*log((delta^2*vr^2 + 2*delta*v0*vr + v0^2)/(v0 - delta*vr)^2)*sqrt(-1))/(li(1)*(v0 + vr));%-sqrt(-1)*vr*log(1+2*vr*delta/(v0-vr*delta));
-%     guess(2) = Omega/4*sqrt(-1);
-    w_out(j,:) = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,phase_kappa,Omega,len,delta,vr,v0);
-    w_res = zeros(1,2);
+    w_out = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0);
+    w_res(j,2) = w_out;
     for k = 1:2*N
-        w_res(k) = muller(guess(k),N,lij,xm,xp,k_tr,Omega,rs,ks,vr,delta,v0);
+        w_approx(j,k) = muller(w_res(j,k)+0.01,N,lij,xm,xp,k_tr,Omega,rs,ks,vr,delta,v0);
     end
-    all_w(j,:) = w_res;
-    approx_w(j,2) = -(v0*vr*log((delta^2*vr^2 + 2*delta*v0*vr + v0^2)/(v0 - delta*vr)^2)*sqrt(-1))/(li(1)*(v0 + vr));
     j = j+1;
 end
 
-w1 = -sqrt(-1)*vr*log(1+2*vr*delta/(v0-vr*delta));
-semilogx(li_s,imag(approx_w(:,2)),'r--',linewidth=2)
+figure()
 hold on
-semilogx(li_s,imag(all_w(:,1)),'k.',markersize=8)
-semilogx(li_s,imag(all_w(:,2)),'k.',markersize=8)
-semilogx(li_s,imag(w_out(:,1)),'ro',markersize=8)
-semilogx(li_s,imag(w_out(:,2)),'g*',markersize=8)
-
-legend('Approximation','Im$(\omega_i(\delta))$',interpreter='latex',fontsize=24)
+plot(li_s,imag(w_res(:,1)),'k*','DisplayName','Approximation',markersize=8)
+plot(li_s,imag(w_res(:,2)),'k*',markersize=8)
+plot(li_s,imag(w_approx(:,1)),'r.','DisplayName','Muller`s Method',markersize=8)
+plot(li_s,imag(w_approx(:,2)),'r.',markersize=8)
+legend('show',interpreter='latex',fontsize=18,location='southoutside')
+% legend('Approximation','Im$(\omega_i(\delta))$',interpreter='latex',fontsize=24)
 xlabel('$\ell_{i}$',interpreter='latex',fontsize=20)
 ylabel('Im$(\omega_j)$',interpreter='latex',fontsize=20)
+
+figure()
+hold on
+plot(li_s,real(w_res(:,1)),'k*','DisplayName','Approximation',markersize=8)
+plot(li_s,real(w_res(:,2)),'k*',markersize=8)
+plot(li_s,real(w_approx(:,1)),'r.','DisplayName','Muller`s Method',markersize=8)
+plot(li_s,real(w_approx(:,2)),'r.',markersize=8)
+legend('show',interpreter='latex',fontsize=18,location='southoutside')
+% legend('Approximation','Re$(\omega_i(\delta))$',interpreter='latex',fontsize=24)
+xlabel('$\ell_{i}$',interpreter='latex',fontsize=20)
+ylabel('Re$(\omega_j)$',interpreter='latex',fontsize=20)
+
+% compute error between approximation and Muller's method
+abs_error = abs(w_res-w_approx);
 
 
 %% N=1, iterate over epsilon_kappa
@@ -192,7 +200,7 @@ for i = 1:(N-1)
     phase_kappa(i+1) = pi/i;
     phase_rho(i+1) = pi/i;
 end
-eks = linspace(0,0.5,6); % modulation amplitude of kappa
+eks = linspace(0,0.8,9); % modulation amplitude of kappa
 epsilon_rho = 0; % modulation amplitude of rho
 
 figure()
@@ -208,38 +216,23 @@ for epsilon_kappa = eks
         rs = [rs; rs_j];
     end
     
-    all_w = zeros(length(li_s),2*N);
-    approx_w = zeros(length(li_s),2*N);
-    w_out = zeros(length(li_s),2*N);
+    w_res = zeros(length(li_s),2*N);
     j = 1;
     
     for len = li_s
         li = ones(1,N).*len;
         xm = 0; xp = xm+li(1);
-        guess = zeros(1,2);
-        guess(2) = -(v0*vr*log((delta^2*vr^2 + 2*delta*v0*vr + v0^2)/(v0 - delta*vr)^2)*sqrt(-1))/(li(1)*(v0 + vr));%-sqrt(-1)*vr*log(1+2*vr*delta/(v0-vr*delta));
-    %     guess(2) = Omega/4*sqrt(-1);
-        w_out(j,:) = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,phase_kappa,Omega,len,delta,vr,v0);
-        w_res = zeros(1,2);
-        for k = 1:2*N
-            w_res(k) = muller(guess(k),N,lij,xm,xp,k_tr,Omega,rs,ks,vr,delta,v0);
-        end
-        all_w(j,:) = w_res;
-        approx_w(j,2) = -(v0*vr*log((delta^2*vr^2 + 2*delta*v0*vr + v0^2)/(v0 - delta*vr)^2)*sqrt(-1))/(li(1)*(v0 + vr));
+        w_out = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0);
+        w_res(j,2) = w_out;
         j = j+1;
     end
     
-    semilogx(li_s,imag(all_w(:,2)),'-','Color',c_map(iR,:),markersize=8,linewidth=2)
+    loglog(li_s,imag(w_res(:,2)),'-','Color',c_map(iR,:),markersize=8,linewidth=2)
     hold on
-    semilogx(li_s,imag(w_out(:,2)),'*','Color',c_map(iR,:),markersize=8,linewidth=2)
     iR = iR+1;
 
 end
 
-
-semilogx(li_s,imag(approx_w(:,2)),'r--',linewidth=2)
-semilogx(li_s,imag(w_out(:,1)),'k.',markersize=8)
-semilogx(li_s,imag(w_out(:,2)),'k.',markersize=8)
 legend('$\epsilon_{\kappa}=0$','$\epsilon_{\kappa}=0.1$','$\epsilon_{\kappa}=0.2$',...
     '$\epsilon_{\kappa}=0.3$','$\epsilon_{\kappa}=0.4$','$\epsilon_{\kappa}=0.5$',...
     '$\epsilon_{\kappa}=0.6$','$\epsilon_{\kappa}=0.7$','$\epsilon_{\kappa}=0.8$',...
