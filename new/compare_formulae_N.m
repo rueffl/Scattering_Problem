@@ -6,8 +6,8 @@ format long
 k_tr = 4; % truncation parameters as in remark 3.3
 k_tr_n = k_tr;
 k_tr_m = 0;
-N = 2; % number of the resonator
-spacing = 10; lij = ones(1,N-1).*spacing; % spacing between the resonators
+N = 6; % number of the resonator
+spacing = 20; lij = ones(1,N-1).*spacing; % spacing between the resonators
 len = 0.5; li = ones(1,N).*len; % length of the resonator
 L = sum(li)+sum(lij); % length of the unit cell
 Ls = zeros(2*N-1,1);
@@ -53,13 +53,13 @@ k_op = w_op/v0; % operating wave number outside of the resonator
 k0 = w0/v0; % wave number of incident frequency
 
 % Define relevant functions
-uin = @(x,t) exp((k0).*x+w0.*t).*(x<=xm(1)); % incident wave
+uin = @(x,t) exp(sqrt(-1)*((k0).*x+w0.*t)).*(x<xm(1)); % incident wave
 G = @(k,x) exp(sqrt(-1)*k*abs(x))./(2*sqrt(-1)*k); % Green's function
 
 % Define evaluation points
 len_xs = 800;
 len_zs = 80;
-xs = linspace(xm(1)-1,xp(end)+1,len_xs);
+xs = linspace(xm(1)-spacing,xp(end)+spacing,len_xs);
 zs = zeros(N,len_zs);
 for i = 1:N
     zs(i,:) = linspace(xm(i),xp(i),len_zs);
@@ -75,7 +75,7 @@ sol = MatcalA\MatcalF; % solve for the interior coefficients, vector \mathbf{w}
 
 us_eval_x = zeros(1,len_xs);
 us_eval_z = zeros(1,len_zs);
-usx = @(x) uin(x,t) + get_us(x, t, N, xm, xp, lij, k_tr, v0, w_op, Omega, rs, ks, vr, sol, w_res, k0); % scattered wave field as a function of x for fixed time t, according to formula (31)
+usx = @(x) N*uin(x,t) + get_us(x, t, N, xm, xp, lij, k_tr, v0, w_op, Omega, rs, ks, vr, sol, w_res, k0); % scattered wave field as a function of x for fixed time t, according to formula (31)
 
 for i = 1:len_xs
     us_eval_x(i) = usx(xs(i));
@@ -87,7 +87,7 @@ fig.Position = [263,725,982,352];
 subplot(1,2,1)
 set(gca,'FontSize',14)
 hold on
-plot(xs,real(us_eval_x),'-','DisplayName','Exact',markersize=8,linewidth=2)
+plot(xs,real(us_eval_x),'.','DisplayName','Exact',markersize=8,linewidth=2)
 xlim([xs(1) xs(end)])
 xlabel('$x$',Interpreter='latex',FontSize=18)
 ylabel(strcat('Re$(u^{\mathrm{sc}}(x,$',num2str(t),'$))$'),Interpreter='latex',FontSize=18)
@@ -95,7 +95,7 @@ ylabel(strcat('Re$(u^{\mathrm{sc}}(x,$',num2str(t),'$))$'),Interpreter='latex',F
 subplot(1,2,2)
 set(gca,'FontSize',14)
 hold on
-plot(xs,imag(us_eval_x),'-','DisplayName','Exact',markersize=8,linewidth=2)
+plot(xs,imag(us_eval_x),'.','DisplayName','Exact',markersize=8,linewidth=2)
 xlim([xs(1) xs(end)])
 xlabel('$x$',Interpreter='latex',FontSize=18)
 ylabel(strcat('Im$(u^{\mathrm{sc}}(x,$',num2str(t),'$))$'),Interpreter='latex',FontSize=18)
@@ -109,41 +109,5 @@ for i = 1:N
     subplot(1,2,2)
     plot(zs(i,:),imag(us_eval_z),'rx','DisplayName','Exact',markersize=8,linewidth=2)
 end
-
-
-%% Compute scattered wave using formula (71)
-
-usx = @(x) u_sc(x,t,rs,ks,vr,delta,k_op,k0,w_op,Omega,v0,w0,k_tr_n,k_tr_m,z,w_res(1)); % scattered wave field as a function of x for fixed time t, according to formula (71)
-
-us_eval_x = zeros(1,len_xs);
-for i = 1:len_xs
-    us_eval_x(i) = usx(xs(i));
-end
-us_eval_z = zeros(1,N);
-for i = 1:N
-    us_eval_z(i) = usx(z(i));
-end
-
-% Create plot
-fig2 = figure();
-fig2.Position = [263,725,982,352];
-subplot(1,2,1)
-set(gca,'FontSize',14)
-hold on
-plot(xs,real(us_eval_x),'-','DisplayName','Exact',markersize=8,linewidth=2)
-plot(z,real(us_eval_z),'rx','DisplayName','Exact',markersize=8,linewidth=2)
-xlim([xs(1) xs(end)])
-xlabel('$x$',Interpreter='latex',FontSize=18)
-ylabel(strcat('Re$(u^{\mathrm{sc}}(x,$',num2str(t),'$))$'),Interpreter='latex',FontSize=18)
-
-subplot(1,2,2)
-set(gca,'FontSize',14)
-hold on
-plot(xs,imag(us_eval_x),'-','DisplayName','Exact',markersize=8,linewidth=2)
-plot(z,imag(us_eval_z),'rx','DisplayName','Exact',markersize=8,linewidth=2)
-xlim([xs(1) xs(end)])
-xlabel('$x$',Interpreter='latex',FontSize=18)
-ylabel(strcat('Im$(u^{\mathrm{sc}}(x,$',num2str(t),'$))$'),Interpreter='latex',FontSize=18)
-
 
 

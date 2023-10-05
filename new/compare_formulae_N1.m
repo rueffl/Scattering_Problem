@@ -8,7 +8,7 @@ k_tr_n = k_tr;
 k_tr_m = 0;
 N = 1; % number of the resonator
 spacing = 10; lij = ones(1,N-1).*spacing; % spacing between the resonators
-len = 0.005; li = ones(1,N).*len; % length of the resonator
+len = 1; li = ones(1,N).*len; % length of the resonator
 L = sum(li)+sum(lij); % length of the unit cell
 Ls = zeros(2*N-1,1);
 Ls(1:2:end) = li;
@@ -51,7 +51,7 @@ k_op = w_op/v0; % operating wave number outside of the resonator
 k0 = w0/v0; % wave number of incident frequency
 
 % Define relevant functions
-uin = @(x,t) exp(k0.*x+w0.*t).*(x<=xm(1)); % incident wave
+uin = @(x,t) exp(sqrt(-1)*(k0.*x+w0.*t)).*(x<xm(1)); % incident wave
 G = @(k,x) exp(sqrt(-1)*k*abs(x))./(2*sqrt(-1)*k); % Green's function
 
 % Define evaluation points

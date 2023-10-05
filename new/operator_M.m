@@ -1,4 +1,4 @@
-function [phi] = operator_M(sol, i, k_tr, n, xim, xip, lij, k, w, Omega, rs, ks, vr)
+function [phi] = operator_M(sol, i, k_tr, n, xim, xip, lij, k, w, Omega, rs, ks, vr, v_in)
 %OPERATOR_M constructs the coefficients of the exterior solution using the 
 %     coefficients of the interior solution.
 %   sol:    coefficients of the interior solution
@@ -14,6 +14,7 @@ function [phi] = operator_M(sol, i, k_tr, n, xim, xip, lij, k, w, Omega, rs, ks,
 %   rs:     Fourier coefficients of \rho_i(t)
 %   ks:     Fourier coefficients of \kappa_i(t)
 %   vr:     wave speed inside the resonators
+%   v_in:   n-th mode of the incident wave
 
     m = -1/(2*sqrt(-1)*sin(k*lij(i)));
     R = m.*[exp(-sqrt(-1)*k*xim(i+1)), -exp(-sqrt(-1)*k*xip(i)); -exp(sqrt(-1)*k*xim(i+1)), exp(sqrt(-1)*k*xip(i))];
@@ -27,6 +28,8 @@ function [phi] = operator_M(sol, i, k_tr, n, xim, xip, lij, k, w, Omega, rs, ks,
         v(1) = v(1) + (sol(2*N*(k_tr-j)+2*i-1)*exp(sqrt(-1)*l*xip(i))+sol(2*N*(k_tr-j)+2*i)*exp(-sqrt(-1)*l*xip(i)))*vv;
         v(2) = v(2) + (sol(2*N*(k_tr-j)+2*(i+1)-1)*exp(sqrt(-1)*lp*xim(i+1))+sol(2*N*(k_tr-j)+2*(i+1))*exp(-sqrt(-1)*lp*xim(i+1)))*vvp;
     end
+    v(1) = v(1) + v_in(xip(i));
+    v(2) = v(2) - v_in(xim(i+1));
     phi = R*v;
 
 end

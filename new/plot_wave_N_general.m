@@ -53,7 +53,7 @@ k_op = w_op/v0; % operating wave number outside of the resonator
 k0 = w0/v0; % wave number of incident frequency
 
 % Define relevant functions
-uin = @(x,t) exp((k0).*x+w0.*t).*(x<=xm(1)); % incident wave
+uin = @(x,t) exp(sqrt(-1)*((k0).*x+w0.*t)).*(x<xm(1)); % incident wave
 G = @(k,x) exp(sqrt(-1)*k*abs(x))./(2*sqrt(-1)*k); % Green's function
 
 % Define evaluation points
@@ -74,7 +74,7 @@ sol = MatcalA\MatcalF; % solve for the interior coefficients, vector \mathbf{w}
 
 us_eval_x = zeros(1,len_xs);
 us_eval_z = zeros(1,len_zs);
-usx = @(x) uin(x,t) + get_us(x, t, N, xm, xp, lij, k_tr, v0, w_op, Omega, rs, ks, vr, sol, w_res, k0); % scattered wave field as a function of x for fixed time t, according to formula (31)
+usx = @(x) N*uin(x,t) + get_us(x, t, N, xm, xp, lij, k_tr, v0, w_op, Omega, rs, ks, vr, sol, w_res, k0); % scattered wave field as a function of x for fixed time t, according to formula (31)
 
 for i = 1:len_xs
     us_eval_x(i) = usx(xs(i));

@@ -20,10 +20,13 @@ function [us] = get_us(x, t, N, xim, xip, lij, k_tr, v0, w, Omega, rs, ks, vr, s
     us = 0;
     for j = 1:N
         for n = -k_tr:k_tr
-%             kn = (w(j)+n*Omega)/v0;
-%             us = us + operator_S(x, N, xim, xip, lij, k_tr, kn, w(j), Omega, rs, ks, vr, sol, n)*exp(sqrt(-1)*(n*Omega+w(j))*t);
+            if n == 0
+                v_in = @(p) exp(sqrt(-1)*(kin).*p).*(p<xim(1));
+            else
+                v_in = @(p) 0;
+            end
             kn = (w+n*Omega)/v0;
-            us = us + operator_S(x, N, xim, xip, lij, k_tr, kn, w, Omega, rs, ks, vr, sol, n, kin)*exp(sqrt(-1)*(n*Omega+w_res(j))*t);
+            us = us + operator_S(x, N, xim, xip, lij, k_tr, kn, w, Omega, rs, ks, vr, sol, n, kin, v_in)*exp(sqrt(-1)*(n*Omega+w_res(j))*t);
         end
     end
 
