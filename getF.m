@@ -8,11 +8,10 @@ function [F] = getF(k_tr, N, delta, k, k_0, xim)
 %   xim:    left boundary points of all resonators
 
     Fn = zeros(2*N,1);
+    k = 0;
     Fn(1) = sqrt(-1)*delta*(k-k_0)*exp(sqrt(-1)*k_0*xim(1));
-    
-    F = Fn;
-    for i = 1:(2*k_tr)
-        F = vertcat(F,Fn);
-    end
+
+    F = zeros(2*N*(2*k_tr+1),1);
+    F(2*N*(k_tr)+1:2*N*(k_tr+1)) = Fn;
 
 end

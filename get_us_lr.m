@@ -1,5 +1,5 @@
-function [us] = get_us(x, t, N, xim, xip, lij, k_tr, v0, w, Omega, rs, ks, vr, sol, w_res, kin)
-%GET_US Get the scattered wave evaluated at x at time t.
+function [us] = get_us_lr(x, t, N, xim, xip, lij, k_tr, v0, w, Omega, rs, ks, vr, sol, w_res, kin, vin_l, vin_r)
+%GET_US_LR Get the scattered wave evaluated at x at time t for the case of left & right incident wave fields.
 %   x:      evaluation point
 %   t:      evaluation time
 %   N:      number of resonators
@@ -16,15 +16,13 @@ function [us] = get_us(x, t, N, xim, xip, lij, k_tr, v0, w, Omega, rs, ks, vr, s
 %   sol:    coefficients of the interior solution
 %   w_res:  subwavelength resonant frequencies \omega_j, j=1,...,N
 %   kin:    wave number of incident wave
+%   vin_l:  modes of the left incident wave field
+%   vin_r:  modes of the right incident wave field
 
     us = 0;
     for j = 1:N
         for n = -k_tr:k_tr
-            if n == 0
-                v_in = @(p) exp(sqrt(-1)*(kin).*p).*(p<xim(1));
-            else
-                v_in = @(p) 0;
-            end
+            v_in = @(x) vin_l(x,n) + vin_r(x,n);
             kn = (w+n*Omega)/v0;
             us = us + operator_S(x, N, xim, xip, lij, k_tr, kn, w, Omega, rs, ks, vr, sol, n, kin, v_in)*exp(sqrt(-1)*(n*Omega+w_res(j))*t);
         end

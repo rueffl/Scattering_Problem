@@ -1,4 +1,4 @@
-function xplus = muller(initial_guess,N,lij,L,xm,xp,k_tr,Omega,rs,ks,vr,delta,v0)
+function xplus = muller(initial_guess,N,lij,xm,xp,k_tr,Omega,rs,ks,vr,delta,v0)
 %MULLER Muller's method to find the smallest eigenvalue of the matrix 
 %       \matcal{A} as a function of \omega.
     % define three initial guesses
@@ -7,18 +7,17 @@ function xplus = muller(initial_guess,N,lij,L,xm,xp,k_tr,Omega,rs,ks,vr,delta,v0
     % xn = initial_guess*(1+0.01*exp(1i*4*pi/3));
     xn = initial_guess;
     % tolerance for exiting the mullers method
-    epsilon = 1e-9;
+    tol = 1e-12;
 
     % iteration number
     i = 0;
     xplus = xn;
 
     % function to iterate with
-%     p = @(w) minev(getMatcalA(N,lij,xm,xp,k_tr,w,Omega,rs,ks,vr,delta,v0));
-    p = @(w) svds(getMatcalA(N,lij,xm,xp,k_tr,w,Omega,rs,ks,vr,delta,v0),1,"smallest");
+    p = @(w) minev(getMatcalA(N,lij,xm,xp,k_tr,w,Omega,rs,ks,vr,delta,v0));
     
     % implementation of mullers method
-    while (abs(p(xn)) > epsilon)
+    while (abs(p(xn)) > tol)
 
         q = (xn - xnm1)/(xnm1 - xnm2);
         a = q*p(xn) - q*(1+q)*p(xnm1) + q^2*p(xnm2);
@@ -39,7 +38,6 @@ function xplus = muller(initial_guess,N,lij,L,xm,xp,k_tr,Omega,rs,ks,vr,delta,v0
         xn = xplus;
         
         i = i + 1;
-        disp(strcat('Iteration:  ',num2str(i)))
+        disp(strcat('Iteration  ',num2str(i),' xn=',num2str(xn),' error=',num2str(p(xn))))
     end
-    
 end

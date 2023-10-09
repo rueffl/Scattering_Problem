@@ -5,7 +5,7 @@ k_tr = 4; % truncation parameters as in remark 3.3
 N = 6; % number of the resonator
 li = ones(1,N).*0.025; % length of the resonators
 lij_s = linspace(500,500000,100); % distance between the resonators
-delta = 0.000001; % small contrast parameter
+delta = 0.0001; % small contrast parameter
 
 vr = 1;
 v0 = 1;
@@ -19,7 +19,7 @@ for i = 1:(N-1)
     phase_kappa(i+1) = pi/i;
     phase_rho(i+1) = pi/i;
 end
-epsilon_kappa = 0; % modulation amplitude of kappa
+epsilon_kappa = 0.2; % modulation amplitude of kappa
 epsilon_rho = 0; % modulation amplitude of rho
 rs = [];
 ks = [];
@@ -33,23 +33,40 @@ end
 
 all_w = zeros(length(lij_s),2*N);
 j = 1;
-figure()
+fig = figure();
 hold on
+gray = [.7 .7 .7];
 for len = lij_s
     lij = ones(1,N-1).*len;
+    L = sum(li)+sum(lij); % length of the unit cell
+    Ls = zeros(2*N-1,1);
+    Ls(1:2:end) = li;
+    Ls(2:2:end) = lij;
+    xipm = [0,cumsum(Ls)']; % all boundary points
+    xm = xipm(1:2:end); % LHS boundary points
+    xp = xipm(2:2:end); % RHS boundary points
     C = make_capacitance_finite(N,lij);
     w_out = get_capacitance_approx(epsilon_kappa,epsilon_rho,li,Omega,phase_rho,phase_kappa,delta,C);
-    plot(ones(1,2*N).*len,real(w_out),'k.',markersize=8)
+    w_out_hot = get_capacitance_approx_hot(epsilon_kappa,li,Omega,phase_kappa,delta,C,vr,v0,lij,xm,xp);
+    if len == lij_s(end)
+        plot(ones(1,2*N).*len,real(w_out),'.','Color',gray,'MarkerSize',8,'DisplayName','Order $O(\delta)$ approximation')
+        plot(ones(1,2*N).*len,real(w_out_hot),'k.','MarkerSize',8,'DisplayName','Order $O(\delta^{2/3})$ approximation')
+    else
+        plot(ones(1,2*N).*len,real(w_out),'.','Color',gray,'MarkerSize',8,'HandleVisibility','off')
+        plot(ones(1,2*N).*len,real(w_out_hot),'k.','MarkerSize',8,'HandleVisibility','off')
+    end
     all_w(j,:) = w_out;
     j = j+1;
 end
 
 % w1 = -sqrt(-1)*vr*log(1+2*vr*delta/(v0-vr*delta));
 w1 = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,lij_s(1),delta,vr,v0);
-plot(lij_s(end),imag(w1),'r*')
+plot(lij_s(end),real(w1),'r*','DisplayName','$\omega_0$ for $N=1$')
 
+fig.Position = [2277,239,1699,685];
 xlabel('$\ell_{i(i+1)}$',interpreter='latex',fontsize=20)
 ylabel('$\omega_j$',interpreter='latex',fontsize=20)
+legend('show',interpreter='latex',fontsize=18,location='best')
 
 %% N = 1
 

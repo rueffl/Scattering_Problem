@@ -1,4 +1,4 @@
-function w_out = get_capacitance_approx(epsilon_kappa,epsilon_rho,li,Omega,phase_rho,phase_kappa,delta,C)
+function [w_out] = get_capacitance_approx(epsilon_kappa,epsilon_rho,li,Omega,phase_rho,phase_kappa,delta,C)
     T = 2*pi/Omega;
     N = length(phase_kappa);
     sqrtkappat = @(t) 1./sqrt(1+epsilon_kappa*cos(Omega*t+phase_kappa));
@@ -6,6 +6,9 @@ function w_out = get_capacitance_approx(epsilon_kappa,epsilon_rho,li,Omega,phase
     rhot =  @(t) 1./(1 + epsilon_rho*cos(Omega*t+phase_rho));
     M = @(t) makeM(t,delta,li,C,rhot,sqrtkappat,w3);
     [w_out, cnd] = hill_exp(T,M,N);
+    [w_out_real,order] = sort(real(w_out),'descend');
+    w_out_imag = imag(w_out(order));
+    w_out = w_out_real + sqrt(-1).*w_out_imag;
 end
 
 function out = makeM(t,delta,li,C,rhot,sqrtkappat,w3)
@@ -13,7 +16,7 @@ function out = makeM(t,delta,li,C,rhot,sqrtkappat,w3)
     Rinv = diag(1./rhot(t));
     K = diag(sqrtkappat(t));
     W3 = diag(w3(t));
-    out = delta*K*Rho*C*K*Rinv + W3;
+    out = delta*diag(1./li)*K*Rho*C*K*Rinv + W3;
 end
 
 function [w_out, cnd] = hill_exp(T,M,N)

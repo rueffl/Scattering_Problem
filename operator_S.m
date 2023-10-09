@@ -1,4 +1,4 @@
-function [u] = operator_S(x, N, xim, xip, lij, k_tr, k, w, Omega, rs, ks, vr, sol, n)
+function [u] = operator_S(x, N, xim, xip, lij, k_tr, k, w, Omega, rs, ks, vr, sol, n, kin, v_in)
 %OPERATOR_S operator evaluating the scattered wave at x.
 %   x:      evaluation point
 %   N:      number of resonators
@@ -13,9 +13,12 @@ function [u] = operator_S(x, N, xim, xip, lij, k_tr, k, w, Omega, rs, ks, vr, so
 %   ks:     Fourier coefficients of \kappa_i(t)
 %   vr:     wave speed inside the resonators
 %   sol:    coefficients of the interior solution
+%   n:      mode
+%   kin:    wave number of incident wave
+%   v_in:   n-th mode of the incident wave field
 
 
-    if x >= xip(end)
+    if x > xip(end)
         i = N;
         a = 0;
         for j = -k_tr:k_tr
@@ -23,21 +26,23 @@ function [u] = operator_S(x, N, xim, xip, lij, k_tr, k, w, Omega, rs, ks, vr, so
             v = vs(j, n, i, k_tr, w, Omega, rs, ks, vr);
             a = a + ((sol(2*N*(k_tr-j)+2*i-1)*exp(sqrt(-1)*l*xip(end))+sol(2*N*(k_tr-j)+2*i)*exp(-sqrt(-1)*l*xip(end)))*v); 
         end
+        a = a - v_in(xip(end)+0.000001); % add the influence of the incident wave in the continuity condition
         u = a*exp(sqrt(-1)*k*(x-xip(end)));
-    elseif x <= xim(1)
+    elseif x < xim(1)
         i = 1;
         b = 0;
         for j = -k_tr:k_tr
             l = ll(j, i, k_tr, w, Omega, rs, ks, vr);
             v = vs(j, n, i, k_tr, w, Omega, rs, ks, vr);
-            b = b + exp(sqrt(-1)*k*xim(1))*((sol(2*N*(k_tr-j)+2*i-1)*exp(sqrt(-1)*l*xim(2))+sol(2*N*(k_tr-j)+2*i)*exp(-sqrt(-1)*l*xim(i+1)))*v);
+            b = b + ((sol(2*N*(k_tr-j)+2*i-1)*exp(sqrt(-1)*l*xim(1))+sol(2*N*(k_tr-j)+2*i)*exp(-sqrt(-1)*l*xim(1)))*v);
         end
-        u = b*exp(-sqrt(-1)*k*x);
+        b = b - v_in(xim(1)-0.0000001); % add the influence of the incident wave in the continuity condition
+        u = b*exp(sqrt(-1)*k*(xim(1)-x));
     else
         for i = 1:(N-1)
             xm = xim(i+1); xp = xip(i);
             if x >= xp && x <= xm
-                ab = operator_M(sol, i, k_tr, n, xim, xip, lij, k, w, Omega, rs, ks, vr);
+                ab = operator_M(sol, i, k_tr, n, xim, xip, lij, k, w, Omega, rs, ks, vr, v_in);
                 u = ab(1)*exp(sqrt(-1)*k*x)+ab(2)*exp(-sqrt(-1)*k*x);
             end
         end

@@ -1,4 +1,13 @@
 function [Gnj,Vnj] = getG_and_V(xm,xp,n,k_tr,rs,fis,list_lambdas)
+%GETG_AND_V construct the matrices \mathcal{G} and \mathcal{V}
+%   xm:             left boundary points of all resonators
+%   xp:             right boundary points of all resonators
+%   n:              considered mode
+%   k_tr:           truncation parameter
+%   rs:             Fourier coefficients of \rho_i(t)
+%   fis:            list of eigenvectors of C
+%   list_lambdas:   list of eigenvalues of C
+
     N = length(xm);
     Gnj=zeros(2*N);
     Vnj = zeros(2*N);    
@@ -20,9 +29,9 @@ function [Gnj,Vnj] = getG_and_V(xm,xp,n,k_tr,rs,fis,list_lambdas)
         Gi = sum* [-1i*lambda*exp(1i*lambda*xm(i)) 1i*lambda*exp(-1i*lambda*xm(i));
             1i*lambda*exp(1i*lambda*xp(i)) -1i*lambda*exp(-1i*lambda*xp(i))];
         Gnj(2*i-1:2*i,2*i-1:2*i)=Gi;
-    %   Build blocks of Vnj
-    Vi = fi(k_tr+1-n)* [exp(1i*lambda*xm(i)) exp(-1i*lambda*xm(i));
-                         exp(1i*lambda*xp(i)) exp(-1i*lambda*xp(i))];
-    Vnj(2*i-1:2*i,2*i-1:2*i)=Vi;        
+        %   Build blocks of Vnj
+        Vi = fi(k_tr+1-n)* [exp(1i*lambda*xm(i)) exp(-1i*lambda*xm(i));
+                             exp(1i*lambda*xp(i)) exp(-1i*lambda*xp(i))];
+        Vnj(2*i-1:2*i,2*i-1:2*i) = Vi;        
     end
 end
