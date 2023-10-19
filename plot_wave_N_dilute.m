@@ -3,17 +3,15 @@ clear all
 format long
 
 % Settings for the material's structure
-k_tr = 4; % truncation parameters as in remark 3.3
-k_tr_n = k_tr;
-k_tr_m = 0;
-N = 3; % number of the resonator
-spacing = 10; lij = ones(1,N-1).*spacing; % spacing between the resonators
-len = 0.0005; li = ones(1,N).*len; % length of the resonator
+k_tr = 0; % truncation parameters as in remark 3.3
+N = 2; % number of the resonator
+spacing = 1000; lij = ones(1,N-1).*spacing; % spacing between the resonators
+len = 0.05; li = ones(1,N).*len; % length of the resonator
 L = sum(li)+sum(lij); % length of the unit cell
 Ls = zeros(2*N-1,1);
 Ls(1:2:end) = li;
 Ls(2:2:end) = lij;
-xipm = [0,cumsum(Ls)']+1; % all boundary points
+xipm = [0,cumsum(Ls)']-(len*(N/2)+spacing*(N-1)/2); % all boundary points, make sure the resonators are aligned symmetrically wrt 0
 xm = xipm(1:2:end); % LHS boundary points
 xp = xipm(2:2:end); % RHS boundary points
 z = (xm+xp)./2; % centers of resonators
@@ -44,9 +42,6 @@ for j = 1:N
 end
 
 % Calculate subwavelength resonant frequency
-% C = make_capacitance_finite(N,lij); % capacitance matrix
-% w_muller = get_capacitance_approx_hot(epsilon_kappa,li,Omega,phase_kappa,delta,C,vr,v0,lij,xm,xp); % subwavelength resonant frequencies
-% w_res = w_muller(real(w_muller)>=0); % positive subwavelength resonant frequencies
 w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0); % non-zero subwavelength resonant frequency
 w_op = w_res(1)+ 0.0002; % operating frequency
 w0 = w_res(1); % quasifrequency of incident wave
@@ -55,96 +50,144 @@ k_op = w_op/v0; % operating wave number outside of the resonator
 k0 = w0/v0; % wave number of incident frequency
 
 % Define relevant functions
-uin = @(x,t) exp((k0).*x+w0.*t); % incident wave
+uin = @(x,t,n) exp((k0).*x+w0.*t).*(x<xm(1)).*(n==0); % incident wave
+vin = @(x) exp(k0*x);
 G = @(k,x) exp(sqrt(-1)*k*abs(x))./(2*sqrt(-1)*k); % Green's function
 
 % Define evaluation points
 len_xs = 800;
-len_zs = 80;
+len_zs = 20;
 xs = linspace(xm(1)-1,xp(end)+1,len_xs);
 zs = zeros(N,len_zs);
 for i = 1:N
     zs(i,:) = linspace(xm(i),xp(i),len_zs);
 end
 
-%% Calculate the scattered wave field 
+%% Calculate the scattered wave field taking the left and right incident wave fields into account 
 
-Lambdan = zeros(N,2*k_tr+1);
-fig = figure();
-hold on
-xs = linspace(xm(1)-spacing,xp(1),len_xs);
-plot(xs,uin(xs,t),'-')
+uin_r = @(x,t,n) 0; vin_r = @(x,n) 0; dx_vin_r = @(x,n) 0; % zero right incident field
+
+alpha = zeros(N,2*k_tr+1); beta = zeros(N,2*k_tr+1);
 
 for i = 1:N
-    
+
+    zi = z(i);
+    C = getC(k_tr, i, w_op, Omega, rs, ks, vr);
+    [f_ni,lambdas] = eig(C,'vector');
+    lambdas = flip(sqrt(lambdas));
+
+    % Define relevant functions for the incident wave field
     if i == 1
-        MatcalF = getF(k_tr, 1, delta, k_op, k0, xm(1)); % vector \mathcal{F}
+        uin_l = @(x,t,n) exp(sqrt(-1)*((k0).*x+w0.*t)).*(x<xm(1)).*(n==0); % left incident wave
+        vin_l = @(x,n) exp(sqrt(-1)*(k0).*x).*(x<xm(1)).*(n==0); % n-th mode of left incident wave
+        dx_vin_l = @(x,n) sqrt(-1)*k0*exp(sqrt(-1)*(k0).*x).*(x<xm(1)).*(n==0); % derivative of left incident wave
     else
-        MatcalF = getFi(k_tr, delta, w_res, w_op, Lambdan_xneg, z(i-1), xm(i), Omega, v0); % vector \mathcal{F}_i
+        alpha_i_old = alpha_i;
+        uin_l = @(x,t,n) alpha_i_old(n+k_tr+1)*exp(sqrt(-1)*x*(w_op+n*Omega)/v0).*exp(sqrt(-1)*n*Omega*t).*(xp(i-1)<x && x<xm(i)); % left incident wave comming from the previous resonator
+        vin_l = @(x,n) alpha_i_old(n+k_tr+1)*exp(sqrt(-1)*x*(w_op+n*Omega)/v0).*(xp(i-1)<x && x<xm(i)); % n-th mode of the left incident wave
+        dx_vin_l = @(x,n) alpha_i_old(n+k_tr+1)*sqrt(-1)*(w_op+n*Omega)/v0*exp(sqrt(-1)*x*(w_op+n*Omega)/v0).*(xp(i-1)<x && x<xm(i)); % derivative of left incident wave
+        uin = @(x,t,n) uin(x,t,n) + uin_l(x,t,n);
     end
-    MatcalA = getMatcalA(1, [], xm(i), xp(i), k_tr, w_op, Omega, rs(i,:), ks(i,:), vr, delta, v0); % matrix \mathcal{A}
+    
+    % Compute solution coefficients
+    MatcalA = getMatcalA(1,[],xm(i),xp(i),k_tr,w_op,Omega,rs(i,:),ks(i,:),vr,delta,v0); % matrix \mathcal{A}
+    MatcalF = getF_lr(k_tr, 1, delta, xm(i), xp(i), dx_vin_l, dx_vin_r); % vector \mathcal{F}
     sol = MatcalA\MatcalF; % solve for the interior coefficients, vector \mathbf{w}
-    if i > 1
-        Lambdan_old = @(x) Lambdan(x);
-    end
-    Lambdan = @(x) get_Lambdas_N1(z,xm(i),xp(i),k_tr,w_op,Omega,rs,ks,vr,v0,delta,k_op,k0,x,i,sol); % frequency-scattering coefficients
-    Lambdan_xneg = get_Lambdas_N1(z,xm(i),xp(i),k_tr,w_op,Omega,rs,ks,vr,v0,delta,k_op,k0,xm(i)-0.01,i,sol);
+    as = flip(sol(1:2:end)); bs = flip(sol(2:2:end)); 
 
-    if i == 1
-        u_tot = @(x,t) get_usc_i(x, t, Lambdan, k_tr, w_op, w_res, Omega, v0, z(1));% + uin(x,t);
-    else
-        u_tot_old = @(x,t) u_tot(x,t);%get_usc_i(x, t, Lambdan_old, k_tr, w_op, w_res, Omega, v0, z(i-1));
-        u_tot = @(x,t) get_usc_i(x, t, Lambdan, k_tr, w_op, w_res, Omega, v0, z(i)) + (x~=z(i)).*u_tot_old(x,t);
-    end
+    % Calculate alpha_n^i and beta_n^i % for every n = -K, ..., K
+    alpha_i = zeros(1,2*k_tr+1); beta_i = zeros(1,2*k_tr+1); % prepare for values of alpha and beta for a fixed resonator D_i for all n
+    for n = -k_tr:k_tr % iterate over the modes
+
+        sum_ni = 0;
+        kn = (w_op+n*Omega)/v0; % n-th wave number outside of the resonators
+        for j = -k_tr:k_tr
+            sum_ni = sum_ni + (as(j+k_tr+1)*exp(sqrt(-1)*lambdas(j+k_tr+1)*zi)+bs(j+k_tr+1)*exp(-sqrt(-1)*lambdas(j+k_tr+1)*zi))*f_ni(j+k_tr+1);
+        end
+        alpha_ni = sum_ni*exp(-sqrt(-1)*kn*zi);
+        beta_ni = sum_ni - vin_l(zi-0.0000001,n);
+        beta_ni = beta_ni*exp(sqrt(-1)*kn*zi);
     
-    if i < N
-        xs = linspace(xp(i),xp(i+1),len_xs);
-%         xs = linspace(xm(i),xm(i+1),len_xs);
+        alpha_i(n+k_tr+1) = alpha_ni;
+        beta_i(n+k_tr+1) = beta_ni;
+    
+    end
+
+    alpha(i,:) = alpha_i;
+    beta(i,:) = beta_i;
+
+end
+
+% Define the scattered wave field
+u_sc = @(x,t) get_usc(x,t,alpha,beta,vin,z,w_op,Omega,v0,k_tr,uin);
+
+for i = 1:(N+1)
+
+    % Define evaluation points and evaluate the scattered wave at them
+    len_xs = 800;
+    if i == 1
+        xs = linspace(z(i)-4,z(i),len_xs);
+    elseif i == N+1
+        xs = linspace(z(i-1),z(i-1)+4,len_xs);
     else
-        xs = linspace(xp(i),xp(i)+spacing+len,len_xs);
-%         xs = linspace(xm(i),xm(i+1)+spacing+len,len_xs);
+        xs = linspace(z(i-1),z(i),len_xs);
     end
-    ux = zeros(1,len_xs);
-    for j = 1:len_xs
-        ux(j) = u_tot(xs(j),t);
+    u_x = zeros(1,len_xs);
+    for k = 1:len_xs
+        u_x(k) = u_sc(xs(k),0);
     end
 
-    plot(xs,ux,'b-',LineWidth=2)
+    % Plot the evaluated scattered wave field
+    plot(xs,u_x,'.')
+    hold on
 
 end
 
 
 
+%% Functions used in this file
 
+function [usc_x] = get_usc(x,t,alphas,betas,vin,z,w_op,Omega,v0,k_tr,uin)
+%GET_VN  Evaluates v_n at x for a given n
+%   x:      spatial coordinate
+%   t:      temporal coordinate
+%   alphas: coefficients \alpha_n^i, for all i=1,...,N and n=-K,...,K
+%   betas:  coefficients \beta_n^i, for all i=1,...,N and n=-K,...,K
+%   vin:    incidnt wave field to the system
+%   z:      location of resonators
+%   w_op:   operating frequency 
+%   Omega:  frequency of the time-modulated material parameters
+%   v0:     wave speed outside of the resonators
+%   k_tr:   truncation parameter
 
-%% Functions
-
-function usc = get_usc_i(x, t, Lambdan, k_tr, w_op, w_res, Omega, v0, zi)
-% GET_USC_I  Calculates the scattered wave u^{sc}_i at x and time t
-%   x:          spatial coordinate
-%   t:          temporal coordinate
-%   Lambdan:    frequency-scattering coefficient
-%   k_tr:       truncation parameter
-%   w_op:       operating wave frequency
-%   w_res:      resonant frequency
-%   Omega:      frequency of time-modulation
-%   v0:         wave speed outside of the resonators
-%   zi:         centre of resonator
-
-    G = @(k,x) exp(sqrt(-1)*k*abs(x))./(2*sqrt(-1)*k); % Green's function
-    usc = 0;
-    select = @(M,idx) M(idx);
+    usc_x = 0;
     for n = -k_tr:k_tr
-        kn = (w_op+n*Omega)/v0;
-        Lambda = @(x) select(Lambdan(x),n+k_tr+1);
-        usc = usc + Lambda(x)*G(kn,x-zi)*exp(sqrt(-1)*(w_res+n*Omega)*t);
-%         usc = usc + Lambdan(n+k_tr+1)*G(kn,x-zi)*exp(sqrt(-1)*(w_res+n*Omega)*t);
+        vn_sc_x = get_vn(x,alphas(:,n+k_tr+1),betas(:,n+k_tr+1),(w_op+n*Omega)/v0,vin,z);
+        usc_x = usc_x + vn_sc_x*exp(sqrt(-1)*(w_op+n*Omega)*t)+uin(x,t,n);
     end
+
 end
 
+function [vn_x] = get_vn(x,alphas_n,betas_n,kn,vin,z)
+%GET_VN  Evaluates v_n at x for a given n
+%   x:          spatial coordinate
+%   alphas_n:   coefficients \alpha_n^i, for all i=1,...,N
+%   betas_n:    coefficients \beta_n^i, for all i=1,...,N
+%   kn:         n-th wave number outside of D
+%   vin:        incidnt wave field to the system
+%   z:          location of resonators
 
+    if x<=z(1)
+        vn_x = betas_n(1)*exp(-sqrt(-1)*kn*x)+vin(x);
+    elseif x>z(end)
+        vn_x = alphas_n(end)*exp(sqrt(-1)*kn*x);
+    else
+        for i = 1:(length(betas_n)-1)
+            if z(i)<x && x<=z(i+1)
+                vn_x = alphas_n(i)*exp(sqrt(-1)*kn*x)+betas_n(i+1)*exp(-sqrt(-1)*kn*x);
+            end
+        end
+    end
 
-
-
-
+end
 
