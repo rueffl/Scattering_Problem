@@ -28,8 +28,6 @@ function [phi] = operator_M(sol, i, k_tr, n, xim, xip, lij, k, w, Omega, rs, ks,
         v(1) = v(1) + (sol(2*N*(k_tr-j)+2*i-1)*exp(sqrt(-1)*l*xip(i))+sol(2*N*(k_tr-j)+2*i)*exp(-sqrt(-1)*l*xip(i)))*vv;
         v(2) = v(2) + (sol(2*N*(k_tr-j)+2*(i+1)-1)*exp(sqrt(-1)*lp*xim(i+1))+sol(2*N*(k_tr-j)+2*(i+1))*exp(-sqrt(-1)*lp*xim(i+1)))*vvp;
     end
-    v(1) = v(1) + v_in(xip(i)+0.0000001);
-    v(2) = v(2) - v_in(xim(i+1)-0.0000001);
     phi = R*v;
 
 end
