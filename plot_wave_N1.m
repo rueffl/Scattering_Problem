@@ -5,9 +5,9 @@ format long
 % Settings for the structure
 k_tr = 2; % truncation parameters as in remark 3.3
 N = 1; % number of the resonator
-spacing = 1; lij = ones(1,N-1).* spacing; % spacing between the resonators
+spacing = 2000; lij = ones(1,N-1).* spacing; % spacing between the resonators
 len = 1; li = ones(1,N).*len; % length of the resonator
-xm = 0; xp = xm+li(1);
+xm = spacing; xp = xm+li(1);
 delta = 0.0001; % small contrast parameter
 
 vr = 1;
@@ -40,12 +40,15 @@ w = w0 + 0.00000001; % quasifrequency of incident wave
 
 % Compute scattered wave
 ls = 100; % number of evaluation points
-xs = linspace(xm(1)-1, xp(N)+1,ls); % evaluation points
+xs = linspace(xm(1), xp(N)+spacing,ls); % evaluation points
 us = zeros(ls,1);
 
 t = 0; % time
 k = w/v0; % wave number of incident wave
 k_0 = w0/v0; % wave number of operating wave
+
+uin = @(x,t) exp(sqrt(-1)*((k0).*x+w0.*t)).*(x<xm(1)); % incident wave
+usx = @(x) uin(x,t) + get_us(x, t, N, xm, xp, lij, k_tr, v0, w, Omega, rs, ks, vr, sol, w0, k0); % scattered wave field as a function of x for fixed time t, according to formula (31)
 
 for i = 1:ls % iterate over evaluation points
     for j = 1:N % iterate over resonaros
@@ -53,8 +56,7 @@ for i = 1:ls % iterate over evaluation points
         A = getMatcalA(N, lij, xm, xp, k_tr, w, Omega, rs, ks, vr, delta, v0); % matrix \mathcal{A}
         F = getF(k_tr, N, delta, k, k_0, xm); % vector \mathcal{F}
         sol = linsolve(A,F); % interior coefficients
-        us(i) = us(i) + get_us(xs(i), t, N, xm, xp, lij, k_tr, v0, w, Omega, rs, ks, vr, sol, w0); % scattered wave at xs(i)
-
+        us(i) = us(i) + usx(xs(i));
     end
 end
 
