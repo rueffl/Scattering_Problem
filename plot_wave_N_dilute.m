@@ -3,9 +3,9 @@ clear all
 format long
 
 % Settings for the material's structure
-k_tr = 0; % truncation parameters as in remark 3.3
-N = 2; % number of the resonator
-spacing = 1000; lij = ones(1,N-1).*spacing; % spacing between the resonators
+k_tr = 6; % truncation parameters as in remark 3.3
+N = 4; % number of the resonator
+spacing = 100; lij = ones(1,N-1).*spacing; % spacing between the resonators
 len = 0.05; li = ones(1,N).*len; % length of the resonator
 L = sum(li)+sum(lij); % length of the unit cell
 Ls = zeros(2*N-1,1);
@@ -50,144 +50,230 @@ k_op = w_op/v0; % operating wave number outside of the resonator
 k0 = w0/v0; % wave number of incident frequency
 
 % Define relevant functions
-uin = @(x,t,n) exp((k0).*x+w0.*t).*(x<xm(1)).*(n==0); % incident wave
-vin = @(x) exp(k0*x);
 G = @(k,x) exp(sqrt(-1)*k*abs(x))./(2*sqrt(-1)*k); % Green's function
 
-% Define evaluation points
-len_xs = 800;
-len_zs = 20;
-xs = linspace(xm(1)-1,xp(end)+1,len_xs);
-zs = zeros(N,len_zs);
-for i = 1:N
-    zs(i,:) = linspace(xm(i),xp(i),len_zs);
-end
 
-%% Calculate the scattered wave field taking the left and right incident wave fields into account 
 
-uin_r = @(x,t,n) 0; vin_r = @(x,n) 0; dx_vin_r = @(x,n) 0; % zero right incident field
+%% Add solution for left incident wave and right incident wave
 
-alpha = zeros(N,2*k_tr+1); beta = zeros(N,2*k_tr+1);
+all_alphas_l = zeros(N,2*k_tr+1); all_betas_l = zeros(N,2*k_tr+1);
+all_alphas_r = zeros(N,2*k_tr+1); all_betas_r = zeros(N,2*k_tr+1);
 
+% left incident wave
 for i = 1:N
 
-    zi = z(i);
-    C = getC(k_tr, i, w_op, Omega, rs, ks, vr);
-    [f_ni,lambdas] = eig(C,'vector');
-    lambdas = flip(sqrt(lambdas));
-
-    % Define relevant functions for the incident wave field
+    % left incident wave
     if i == 1
-        uin_l = @(x,t,n) exp(sqrt(-1)*((k0).*x+w0.*t)).*(x<xm(1)).*(n==0); % left incident wave
-        vin_l = @(x,n) exp(sqrt(-1)*(k0).*x).*(x<xm(1)).*(n==0); % n-th mode of left incident wave
-        dx_vin_l = @(x,n) sqrt(-1)*k0*exp(sqrt(-1)*(k0).*x).*(x<xm(1)).*(n==0); % derivative of left incident wave
+        vin_l = @(x,n) exp(sqrt(-1)*(k0).*x).*(x<xm(i)).*(n==0); % n-th mode of left incident wave
+        dx_vin_l = @(x,n) sqrt(-1)*k0*exp(sqrt(-1)*(k0).*x).*(x<xm(i)).*(n==0); % derivative of left incident wave
+        uin_r = @(x,t,n) 0; vin_r = @(x,n) 0; dx_vin_r = @(x,n) 0;
     else
-        alpha_i_old = alpha_i;
-        uin_l = @(x,t,n) alpha_i_old(n+k_tr+1)*exp(sqrt(-1)*x*(w_op+n*Omega)/v0).*exp(sqrt(-1)*n*Omega*t).*(xp(i-1)<x && x<xm(i)); % left incident wave comming from the previous resonator
-        vin_l = @(x,n) alpha_i_old(n+k_tr+1)*exp(sqrt(-1)*x*(w_op+n*Omega)/v0).*(xp(i-1)<x && x<xm(i)); % n-th mode of the left incident wave
-        dx_vin_l = @(x,n) alpha_i_old(n+k_tr+1)*sqrt(-1)*(w_op+n*Omega)/v0*exp(sqrt(-1)*x*(w_op+n*Omega)/v0).*(xp(i-1)<x && x<xm(i)); % derivative of left incident wave
-        uin = @(x,t,n) uin(x,t,n) + uin_l(x,t,n);
+        uin_l = @(x,t,n) alphas(n+k_tr+1)*exp(sqrt(-1)*((w_op+n*Omega)/v0*x+(n*Omega+w_op)*t)); % left incident wave from D_{i-1}
+        vin_l = @(x,n) alphas(n+k_tr+1)*exp(sqrt(-1)*((w_op+n*Omega)/v0*x)); % n-th mode of left incident wave
+        dx_vin_l = @(x,n) sqrt(-1)*(w_op+n*Omega)/v0*alphas(n+k_tr+1)*exp(sqrt(-1)*((w_op+n*Omega)/v0*x)); % derivative of n-th mode of left incident wave
     end
     
     % Compute solution coefficients
     MatcalA = getMatcalA(1,[],xm(i),xp(i),k_tr,w_op,Omega,rs(i,:),ks(i,:),vr,delta,v0); % matrix \mathcal{A}
     MatcalF = getF_lr(k_tr, 1, delta, xm(i), xp(i), dx_vin_l, dx_vin_r); % vector \mathcal{F}
-    sol = MatcalA\MatcalF; % solve for the interior coefficients, vector \mathbf{w}
-    as = flip(sol(1:2:end)); bs = flip(sol(2:2:end)); 
+    sol_l = MatcalA\MatcalF; % solve for the interior coefficients, vector \mathbf{w}
 
-    % Calculate alpha_n^i and beta_n^i % for every n = -K, ..., K
-    alpha_i = zeros(1,2*k_tr+1); beta_i = zeros(1,2*k_tr+1); % prepare for values of alpha and beta for a fixed resonator D_i for all n
-    for n = -k_tr:k_tr % iterate over the modes
+    % Compute the eigenvectors and the sqrt of the eigenvalues of C_i
+    C = getC(k_tr, i, w_op, Omega, rs, ks, vr);
+    [fs,lambdas] = eig(C,'vector');
+    lambdas = sqrt(lambdas);
 
-        sum_ni = 0;
-        kn = (w_op+n*Omega)/v0; % n-th wave number outside of the resonators
-        for j = -k_tr:k_tr
-            sum_ni = sum_ni + (as(j+k_tr+1)*exp(sqrt(-1)*lambdas(j+k_tr+1)*zi)+bs(j+k_tr+1)*exp(-sqrt(-1)*lambdas(j+k_tr+1)*zi))*f_ni(j+k_tr+1);
-        end
-        alpha_ni = sum_ni*exp(-sqrt(-1)*kn*zi);
-        beta_ni = sum_ni - vin_l(zi-0.0000001,n);
-        beta_ni = beta_ni*exp(sqrt(-1)*kn*zi);
-    
-        alpha_i(n+k_tr+1) = alpha_ni;
-        beta_i(n+k_tr+1) = beta_ni;
-    
-    end
-
-    alpha(i,:) = alpha_i;
-    beta(i,:) = beta_i;
+    [alphas,betas] = get_alpha_beta(sol_l,lambdas,fs,xm(i),xp(i),w_op,Omega,v0,k_tr,vin_r,vin_l); % calculate exterior coefficients alpha and beta for D_i 
+    all_alphas_l(i,:) = alphas; all_betas_l(i,:) = betas;
 
 end
 
-% Define the scattered wave field
-u_sc = @(x,t) get_usc(x,t,alpha,beta,vin,z,w_op,Omega,v0,k_tr,uin);
+len_xs = 8000;
+all_xs = linspace(xm(1)-spacing,xp(end)+spacing,len_xs);
+all_uxs_l = zeros(1,len_xs); all_uxs_r = zeros(1,len_xs);
+all_uxs_in_l = zeros(1,len_xs); all_uxs_in_r = zeros(1,len_xs);
+t = 0;
 
-for i = 1:(N+1)
+% evaluate u_sc and u_in between each resonators
+for i = 1:N
 
-    % Define evaluation points and evaluate the scattered wave at them
-    len_xs = 800;
-    if i == 1
-        xs = linspace(z(i)-4,z(i),len_xs);
-    elseif i == N+1
-        xs = linspace(z(i-1),z(i-1)+4,len_xs);
-    else
-        xs = linspace(z(i-1),z(i),len_xs);
+    % define the scattered wave field
+    v_sc = @(x,n) all_betas_l(i,n+k_tr+1)*exp(-sqrt(-1)*x*(w_op+n*Omega)/v0).*(x<=z(i))+all_alphas_l(i,n+k_tr+1)*exp(sqrt(-1)*x*(w_op+n*Omega)/v0).*(x>z(i));
+    u_sc = @(x,t) get_u_from_v(x,t,v_sc,k_tr,w_op,Omega);
+
+    % define the incident wave to D_i
+    if i == 1 
+        u_in = @(x,t) exp(sqrt(-1)*((k0).*x+w0.*t)).*(x<=z(1)); % left incident wave of D_1
+    else 
+        v_in = @(x,n) all_alphas_l(i-1,n+k_tr+1)*exp(sqrt(-1)*x*(w_op+n*Omega)/v0).*(x<=z(i));
+        u_in = @(x,t) get_u_from_v(x,t,v_in,k_tr,w_op,Omega); % left incident wave field of D_{i-1}
     end
-    u_x = zeros(1,len_xs);
+
     for k = 1:len_xs
-        u_x(k) = u_sc(xs(k),0);
+        x = all_xs(k);
+        all_uxs_l(k) = all_uxs_l(k) + u_sc(x,t);
+        all_uxs_in_l(k) = all_uxs_in_l(k) + u_in(x,t);
     end
+    
+end
+% 
+% 
+% % right incident wave
+% for i = N:(-1):1
+% 
+%     % right incident wave
+%     if i == N
+%         uin_l = @(x,t,n) 0; vin_l = @(x,n) 0; dx_vin_l = @(x,n) 0;
+%         uin_r = @(x,t,n) 0; vin_r = @(x,n) 0; dx_vin_r = @(x,n) 0; % no right incident wave to the system
+%         uin_r = @(x,t,n) exp(sqrt(-1)*(-(k0).*x+w0.*t)).*(x>xp(end)).*(n==0); % right incident wave
+%         vin_r = @(x,n) exp(sqrt(-1)*(-(k0).*x)).*(x>xp(end)).*(n==0); % n-th mode of right incident wave
+%         dx_vin_r = @(x,n) -sqrt(-1)*k0*exp(sqrt(-1)*(-(k0).*x)).*(x>xp(end)).*(n==0); % derivative of right incident wave
+%     else
+%         uin_r = @(x,t,n) betas(n+k_tr+1)*exp(-sqrt(-1)*((w_op+n*Omega)/v0*x+(n*Omega+w_op)*t)); % right incident wave from D_{i-1}
+%         vin_r = @(x,n) betas(n+k_tr+1)*exp(-sqrt(-1)*((w_op+n*Omega)/v0*x)); % n-th mode of right incident wave
+%         dx_vin_r = @(x,n) -sqrt(-1)*(w_op+n*Omega)/v0*betas(n+k_tr+1)*exp(-sqrt(-1)*((w_op+n*Omega)/v0*x)); % derivative of n-th mode of right incident wave
+%     end
+%     
+%     % Compute solution coefficients
+%     MatcalA = getMatcalA(1,[],xm(i),xp(i),k_tr,w_op,Omega,rs(i,:),ks(i,:),vr,delta,v0); % matrix \mathcal{A}
+%     MatcalF = getF_lr(k_tr, 1, delta, xm(i), xp(i), dx_vin_l, dx_vin_r); % vector \mathcal{F}
+%     sol_r = MatcalA\MatcalF; % solve for the interior coefficients, vector \mathbf{w}
+% 
+%     % Compute the eigenvectors and the sqrt of the eigenvalues of C_i
+%     C = getC(k_tr, i, w_op, Omega, rs, ks, vr);
+%     [fs,lambdas] = eig(C,'vector');
+%     lambdas = sqrt(lambdas);
+% 
+%     [alphas,betas] = get_alpha_beta(sol_r,lambdas,fs,xm(i),xp(i),w_op,Omega,v0,k_tr,vin_r,vin_l); % calculate exterior coefficients alpha and beta for D_i 
+%     all_alphas_r(i,:) = alphas; all_betas_r(i,:) = betas;
+% 
+% end
 
-    % Plot the evaluated scattered wave field
-    plot(xs,u_x,'.')
-    hold on
+% % evaluate u_sc and u_in between each resonators
+% for i = 1:(N+1)
+% 
+%     if i == 1 % domain left of D_1
+%         v_sc = @(x,n) all_betas_r(1,n+k_tr+1)*exp(-sqrt(-1)*x*(w_op+n*Omega)/v0);
+%         u_sc = @(x,t) get_u_from_v(x,t,v_sc,k_tr,w_op,Omega); % scattered wave field left of D_1
+%         v_in = @(x,n) all_betas_r(1,n+k_tr+1)*exp(-sqrt(-1)*x*(w_op+n*Omega)/v0); % n-th mode of right incident wave of D_1
+%         u_in = @(x,t) get_u_from_v(x,t,v_in,k_tr,w_op,Omega); % right incident wave of D_1
+%     elseif i < N+1 % domain between D_{i-1} and D_i
+%         v_sc = @(x,n) all_alphas_r(i-1,n+k_tr+1)*exp(sqrt(-1)*x*(w_op+n*Omega)/v0)+all_betas_r(i,n+k_tr+1)*exp(-sqrt(-1)*x*(w_op+n*Omega)/v0);
+%         u_sc = @(x,t) get_u_from_v(x,t,v_sc,k_tr,w_op,Omega); % scattered wave field between D_{i-1} and D_i
+%         v_in = @(x,n) all_betas_r(i,n+k_tr+1)*exp(-sqrt(-1)*x*(w_op+n*Omega)/v0);
+%         u_in = @(x,t) get_u_from_v(x,t,v_in,k_tr,w_op,Omega); % left incident wave field of D_{i-1}
+%     else % domain right of D_N
+%         v_sc = @(x,n) all_alphas_r(N,n+k_tr+1)*exp(sqrt(-1)*x*(w_op+n*Omega)/v0);
+%         u_sc = @(x,t) get_u_from_v(x,t,v_sc,k_tr,w_op,Omega); % scattered wave field right of D_N
+%         u_in = @(x,t) 0; % right incident wave field of D_N
+%     end
+% 
+%     for k = 1:len_xs
+%         x = all_xs((i-1)*len_xs+k);
+%         all_uxs_r((i-1)*len_xs+k) = u_sc(x,t);
+%         all_uxs_in_r((i-1)*len_xs+k) = u_in(x,t);
+%     end
+%     
+% end
 
+all_uxs_sc = all_uxs_l + all_uxs_r;
+all_uxs_in = all_uxs_in_l + all_uxs_in_r;
+all_uxs = zeros(1,length(all_uxs_in));
+for k = 1:length(all_uxs_in)
+    all_uxs(k) = all_uxs_sc(k)+all_uxs_in(k);
 end
 
+% Create plots of the scattered, incident and total wave field (left)
+[fig1, fig2, fig3] = create_plots(all_xs,t,all_uxs_l,all_uxs_in_l,all_uxs_l+all_uxs_in_l);
 
+% % Create plots of the scattered, incident and total wave field (right)
+% [fig4, fig5, fig6] = create_plots(all_xs,t,all_uxs_r,all_uxs_in_r,all_uxs_r+all_uxs_in_r);
+% 
+% % Create plots of the scattered, incident and total wave field
+% [fig7, fig8, fig9] = create_plots(all_xs,t,all_uxs_sc,all_uxs_in,all_uxs);
 
-%% Functions used in this file
+%% functions
 
-function [usc_x] = get_usc(x,t,alphas,betas,vin,z,w_op,Omega,v0,k_tr,uin)
-%GET_VN  Evaluates v_n at x for a given n
+function [u_xt] = get_u_from_v(x,t,vn,k_tr,w_op,Omega)
+%GET_U_FROM_V  Adds up all of the modes to obtain u
 %   x:      spatial coordinate
 %   t:      temporal coordinate
-%   alphas: coefficients \alpha_n^i, for all i=1,...,N and n=-K,...,K
-%   betas:  coefficients \beta_n^i, for all i=1,...,N and n=-K,...,K
-%   vin:    incidnt wave field to the system
-%   z:      location of resonators
-%   w_op:   operating frequency 
-%   Omega:  frequency of the time-modulated material parameters
-%   v0:     wave speed outside of the resonators
+%   vn:     modes of incident wave field
 %   k_tr:   truncation parameter
+%   w_op:   operating frequency 
+%   Omega:  frequency of the time-modulated material parameters 
 
-    usc_x = 0;
+    u_xt = 0;
     for n = -k_tr:k_tr
-        vn_sc_x = get_vn(x,alphas(:,n+k_tr+1),betas(:,n+k_tr+1),(w_op+n*Omega)/v0,vin,z);
-        usc_x = usc_x + vn_sc_x*exp(sqrt(-1)*(w_op+n*Omega)*t)+uin(x,t,n);
+        u_xt_n = vn(x,n)*exp(sqrt(-1)*(w_op+n*Omega)*t);
+        u_xt = u_xt + u_xt_n;
     end
 
 end
 
-function [vn_x] = get_vn(x,alphas_n,betas_n,kn,vin,z)
-%GET_VN  Evaluates v_n at x for a given n
-%   x:          spatial coordinate
-%   alphas_n:   coefficients \alpha_n^i, for all i=1,...,N
-%   betas_n:    coefficients \beta_n^i, for all i=1,...,N
-%   kn:         n-th wave number outside of D
-%   vin:        incidnt wave field to the system
-%   z:          location of resonators
-
-    if x<=z(1)
-        vn_x = betas_n(1)*exp(-sqrt(-1)*kn*x)+vin(x);
-    elseif x>z(end)
-        vn_x = alphas_n(end)*exp(sqrt(-1)*kn*x);
-    else
-        for i = 1:(length(betas_n)-1)
-            if z(i)<x && x<=z(i+1)
-                vn_x = alphas_n(i)*exp(sqrt(-1)*kn*x)+betas_n(i+1)*exp(-sqrt(-1)*kn*x);
-            end
-        end
-    end
+function [fig1, fig2, fig3] = create_plots(all_xs,t,all_uxs_sc,all_uxs_in,all_uxs)
+%CREATE_PLOTS  Creates the plots of the incident, scattered and total wave fields
+%   all_xs:         spatial evaluation points
+%   t:              temporal coordinate
+%   all_uxs_sc:     scattered wave field
+%   all_uxs_in:     incident wave field
+%   all_uxs:        total wave field
+    
+    % create plot of scattered wave field
+    fig1 = figure();
+    fig1.Position = [263,725,982,352];
+    subplot(1,2,1)
+    set(gca,'FontSize',14)
+    hold on
+    plot(all_xs,real(all_uxs_sc),'-','DisplayName','Exact',markersize=8,linewidth=2)
+    xlim([all_xs(1) all_xs(end)])
+    xlabel('$x$',Interpreter='latex',FontSize=18)
+    ylabel(strcat('Re$(u^{\mathrm{sc}}(x,$',num2str(t),'$))$'),Interpreter='latex',FontSize=18)
+    
+    subplot(1,2,2)
+    set(gca,'FontSize',14)
+    hold on
+    plot(all_xs,imag(all_uxs_sc),'-','DisplayName','Exact',markersize=8,linewidth=2)
+    xlim([all_xs(1) all_xs(end)])
+    xlabel('$x$',Interpreter='latex',FontSize=18)
+    ylabel(strcat('Im$(u^{\mathrm{sc}}(x,$',num2str(t),'$))$'),Interpreter='latex',FontSize=18)
+    
+    % create plot of incident wave field
+    fig2 = figure();
+    fig2.Position = [263,725,982,352];
+    subplot(1,2,1)
+    set(gca,'FontSize',14)
+    hold on
+    plot(all_xs,real(all_uxs_in),'-','DisplayName','Exact',markersize=8,linewidth=2)
+    xlim([all_xs(1) all_xs(end)])
+    xlabel('$x$',Interpreter='latex',FontSize=18)
+    ylabel(strcat('Re$(u^{\mathrm{in}}(x,$',num2str(t),'$))$'),Interpreter='latex',FontSize=18)
+    
+    subplot(1,2,2)
+    set(gca,'FontSize',14)
+    hold on
+    plot(all_xs,imag(all_uxs_in),'-','DisplayName','Exact',markersize=8,linewidth=2)
+    xlim([all_xs(1) all_xs(end)])
+    xlabel('$x$',Interpreter='latex',FontSize=18)
+    ylabel(strcat('Im$(u^{\mathrm{in}}(x,$',num2str(t),'$))$'),Interpreter='latex',FontSize=18)
+    
+    % create plot of total wave field
+    fig3 = figure();
+    fig3.Position = [263,725,982,352];
+    subplot(1,2,1)
+    set(gca,'FontSize',14)
+    hold on
+    plot(all_xs,real(all_uxs),'-','DisplayName','Exact',markersize=8,linewidth=2)
+    xlim([all_xs(1) all_xs(end)])
+    xlabel('$x$',Interpreter='latex',FontSize=18)
+    ylabel(strcat('Re$(u(x,$',num2str(t),'$))$'),Interpreter='latex',FontSize=18)
+    
+    subplot(1,2,2)
+    set(gca,'FontSize',14)
+    hold on
+    plot(all_xs,imag(all_uxs),'-','DisplayName','Exact',markersize=8,linewidth=2)
+    xlim([all_xs(1) all_xs(end)])
+    xlabel('$x$',Interpreter='latex',FontSize=18)
+    ylabel(strcat('Im$(u(x,$',num2str(t),'$))$'),Interpreter='latex',FontSize=18)
 
 end
-
