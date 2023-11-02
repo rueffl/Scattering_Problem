@@ -26,7 +26,7 @@ function [u] = operator_S(x, N, xim, xip, lij, k_tr, k, w, Omega, rs, ks, vr, so
             v = vs(j, n, i, k_tr, w, Omega, rs, ks, vr);
             a = a + ((sol(2*N*(k_tr-j)+2*i-1)*exp(sqrt(-1)*l*xip(end))+sol(2*N*(k_tr-j)+2*i)*exp(-sqrt(-1)*l*xip(end)))*v); 
         end
-        a = a - v_in(xip(end)+0.000001); % add the influence of the incident wave in the continuity condition
+        a = a - v_in(xip(end)+0.000001,n); % add the influence of the incident wave in the continuity condition
         u = a*exp(sqrt(-1)*k*(x-xip(end)));
     elseif x < xim(1)
         i = 1;
@@ -36,7 +36,7 @@ function [u] = operator_S(x, N, xim, xip, lij, k_tr, k, w, Omega, rs, ks, vr, so
             v = vs(j, n, i, k_tr, w, Omega, rs, ks, vr);
             b = b + ((sol(2*N*(k_tr-j)+2*i-1)*exp(sqrt(-1)*l*xim(1))+sol(2*N*(k_tr-j)+2*i)*exp(-sqrt(-1)*l*xim(1)))*v);
         end
-        b = b - v_in(xim(1)-0.0000001); % add the influence of the incident wave in the continuity condition
+        b = b - v_in(xim(1)-0.0000001,n); % add the influence of the incident wave in the continuity condition
         u = b*exp(sqrt(-1)*k*(xim(1)-x));
     else
         for i = 1:(N-1)
