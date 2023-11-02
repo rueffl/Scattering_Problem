@@ -3,8 +3,8 @@ clear all
 format long
 
 % Settings for the material's structure
-k_tr = 6; % truncation parameters as in remark 3.3
-N = 4; % number of the resonator
+k_tr = 3; % truncation parameters as in remark 3.3
+N = 2; % number of the resonator
 spacing = 100; lij = ones(1,N-1).*spacing; % spacing between the resonators
 len = 0.05; li = ones(1,N).*len; % length of the resonator
 L = sum(li)+sum(lij); % length of the unit cell
@@ -66,6 +66,7 @@ for i = 1:N
     if i == 1
         vin_l = @(x,n) exp(sqrt(-1)*(k0).*x).*(x<xm(i)).*(n==0); % n-th mode of left incident wave
         dx_vin_l = @(x,n) sqrt(-1)*k0*exp(sqrt(-1)*(k0).*x).*(x<xm(i)).*(n==0); % derivative of left incident wave
+%         vin_l = @(x,n) 0; dx_vin_l = @(x,n) 0;
         uin_r = @(x,t,n) 0; vin_r = @(x,n) 0; dx_vin_r = @(x,n) 0;
     else
         uin_l = @(x,t,n) alphas(n+k_tr+1)*exp(sqrt(-1)*((w_op+n*Omega)/v0*x+(n*Omega+w_op)*t)); % left incident wave from D_{i-1}
@@ -89,24 +90,32 @@ for i = 1:N
 end
 
 len_xs = 8000;
-all_xs = linspace(xm(1)-spacing,xp(end)+spacing,len_xs);
+% all_xs = zeros(1,(N+1)*len_xs);
+all_xs = linspace(xm(1)-4,xp(end)+4,len_xs);
 all_uxs_l = zeros(1,len_xs); all_uxs_r = zeros(1,len_xs);
 all_uxs_in_l = zeros(1,len_xs); all_uxs_in_r = zeros(1,len_xs);
 t = 0;
 
 % evaluate u_sc and u_in between each resonators
-for i = 1:N
+for i = 1:(N+1)
 
-    % define the scattered wave field
-    v_sc = @(x,n) all_betas_l(i,n+k_tr+1)*exp(-sqrt(-1)*x*(w_op+n*Omega)/v0).*(x<=z(i))+all_alphas_l(i,n+k_tr+1)*exp(sqrt(-1)*x*(w_op+n*Omega)/v0).*(x>z(i));
-    u_sc = @(x,t) get_u_from_v(x,t,v_sc,k_tr,w_op,Omega);
-
-    % define the incident wave to D_i
-    if i == 1 
-        u_in = @(x,t) exp(sqrt(-1)*((k0).*x+w0.*t)).*(x<=z(1)); % left incident wave of D_1
-    else 
-        v_in = @(x,n) all_alphas_l(i-1,n+k_tr+1)*exp(sqrt(-1)*x*(w_op+n*Omega)/v0).*(x<=z(i));
-        u_in = @(x,t) get_u_from_v(x,t,v_in,k_tr,w_op,Omega); % left incident wave field of D_{i-1}
+    if i == 1
+%         all_xs(1:len_xs) = linspace(xm(1)-4,xm(1),len_xs); % domain left of D_1
+        v_sc = @(x,n) all_betas_l(1,n+k_tr+1)*exp(-sqrt(-1)*x*(w_op+n*Omega)/v0);
+        u_sc = @(x,t) get_u_from_v(x,t,v_sc,k_tr,w_op,Omega); % scattered wave field left of D_1
+        u_in = @(x,t) exp(sqrt(-1)*((k0).*x+w0.*t)).*(x<=xm(1)); % left incident wave of D_1
+    elseif i < N+1
+%         all_xs((i-1)*len_xs+1:i*len_xs) = linspace(xp(i-1),xm(i),len_xs); % domain between D_{i-1} and D_i
+        v_sc = @(x,n) all_alphas_l(i-1,n+k_tr+1)*exp(sqrt(-1)*x*(w_op+n*Omega)/v0)+all_betas_l(i,n+k_tr+1)*exp(-sqrt(-1)*x*(w_op+n*Omega)/v0);
+        u_sc = @(x,t) get_u_from_v(x,t,v_sc,k_tr,w_op,Omega); % scattered wave field between D_{i-1} and D_i
+        v_in = @(x,n) all_alphas_l(i-1,n+k_tr+1)*exp(sqrt(-1)*x*(w_op+n*Omega)/v0);
+        u_in = @(x,t) get_u_from_v(x,t,v_in,k_tr,w_op,Omega).*(xp(i-1)<=x && x<=xm(i)); % left incident wave field of D_{i-1}
+    else
+%         all_xs(N*len_xs+1:(N+1)*len_xs) = linspace(xp(N),xp(N)+4,len_xs); % domain right of D_N
+        v_sc = @(x,n) all_alphas_l(N,n+k_tr+1)*exp(sqrt(-1)*x*(w_op+n*Omega)/v0);
+        u_sc = @(x,t) get_u_from_v(x,t,v_sc,k_tr,w_op,Omega); % scattered wave field right of D_N
+        v_in = @(x,n) 0;%all_alphas_l(N,n+k_tr+1)*exp(sqrt(-1)*x*(w_op+n*Omega)/v0);
+        u_in = @(x,t) 0;%get_u_from_v(x,t,v_in,k_tr,w_op,Omega); % left incident wave field of D_N
     end
 
     for k = 1:len_xs
@@ -277,3 +286,7 @@ function [fig1, fig2, fig3] = create_plots(all_xs,t,all_uxs_sc,all_uxs_in,all_ux
     ylabel(strcat('Im$(u(x,$',num2str(t),'$))$'),Interpreter='latex',FontSize=18)
 
 end
+
+
+
+
