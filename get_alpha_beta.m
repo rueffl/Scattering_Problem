@@ -9,8 +9,8 @@ function [alphas,betas] = get_alpha_beta(sol,lambdas,fs,xim,xip,w_op,Omega,v0,k_
 %   Omega:      frequency of time-modulation
 %   v0:         wave speed outside D
 %   k_tr:       truncation parameter
-%   v_in_l:     left incident wave on D_i
 %   v_in_r:     right incident wave on D_i
+%   v_in_l:     left incident wave on D_i
 
     alphas = zeros(1,2*k_tr+1); betas = zeros(1,2*k_tr+1);
 
