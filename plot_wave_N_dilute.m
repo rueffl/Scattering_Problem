@@ -1,5 +1,5 @@
 %% Set structure setting
-clear all
+% clear 
 format long
 
 % Settings for the material's structure
@@ -8,7 +8,7 @@ N = 4; % number of the resonator
 % L = 2000; % length of the domain \mathcal{U}
 % spacing = L/N; lij = ones(1,N-1).*spacing; % spacing between the resonators
 spacing = 100; lij = ones(1,N-1).*spacing; % spacing between the resonators
-len = 0.5; li = ones(1,N).*len; % length of the resonator
+len = 1; li = ones(1,N).*len; % length of the resonator
 L = sum(li)+sum(lij); % length of the unit cell
 Ls = zeros(2*N-1,1);
 Ls(1:2:end) = li;
@@ -32,7 +32,7 @@ for i = 1:(N-1)
     phase_kappa(i+1) = pi/i;
     phase_rho(i+1) = pi/i;
 end
-epsilon_kappa = 0.3; % modulation amplitude of kappa
+epsilon_kappa = 0; % modulation amplitude of kappa
 epsilon_rho = 0; % modulation amplitude of rho
 rs = []; % Fourier coefficients of 1/rho
 ks = []; % Fourier coefficients of 1/kappa
@@ -91,11 +91,9 @@ end
 % right incident wave
 for i = (N-1):(-1):1
 
-    if i == (N-1)
-        vin_r = @(x,n) all_betas_l(i+1,n+k_tr+1)*exp(-sqrt(-1)*((w_op+n*Omega)/v0)*x); % n-th mode of right incident wave on D_{N-1}
-        dx_vin_r = @(x,n) -sqrt(-1)*((w_op+n*Omega)/v0)*all_betas_l(i+1,n+k_tr+1)*exp(-sqrt(-1)*((w_op+n*Omega)/v0)*x); % derivative of n-th mode of right incident wave on D_{N-1}
-        vin_l = @(x,n) 0; dx_vin_l = @(x,n) 0;
-    end
+    vin_r = @(x,n) all_betas_l(i+1,n+k_tr+1)*exp(-sqrt(-1)*((w_op+n*Omega)/v0)*x); % n-th mode of right incident wave on D_{N-1}
+    dx_vin_r = @(x,n) -sqrt(-1)*((w_op+n*Omega)/v0)*all_betas_l(i+1,n+k_tr+1)*exp(-sqrt(-1)*((w_op+n*Omega)/v0)*x); % derivative of n-th mode of right incident wave on D_{N-1}
+    vin_l = @(x,n) 0; dx_vin_l = @(x,n) 0;
 
     % Compute solution coefficients
     MatcalA = getMatcalA(1,[],xm(i),xp(i),k_tr,w_op,Omega,rs(i,:),ks(i,:),vr,delta,v0); % matrix \mathcal{A}
@@ -168,13 +166,14 @@ for k = 1:length(all_uxs_in)
 end
 
 % Create plots of the scattered, incident and total wave field (left)
-% [fig1, fig2, fig3] = create_plots(all_xs,t,all_uxs_l,all_uxs_in_l,all_uxs_l+all_uxs_in_l);
+[fig1, fig2, fig3] = create_plots(all_xs,t,all_uxs_l,all_uxs_in_l,all_uxs_l+all_uxs_in_l);
 
-% % Create plots of the scattered, incident and total wave field (right)
-% [fig4, fig5, fig6] = create_plots(all_xs,t,all_uxs_r,all_uxs_in_r,all_uxs_r+all_uxs_in_r);
+% Create plots of the scattered, incident and total wave field (right)
+[fig4, fig5, fig6] = create_plots(all_xs,t,all_uxs_r,all_uxs_in_r,all_uxs_r+all_uxs_in_r);
 
-% % Create plots of the scattered, incident and total wave field
+% Create plots of the scattered, incident and total wave field
 [fig7, fig8, fig9] = create_plots(all_xs,t,all_uxs_sc,all_uxs_in,all_uxs);
+
 
 %% functions
 
