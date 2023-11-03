@@ -3,12 +3,10 @@ clear all
 format long
 
 % Settings for the material's structure
-k_tr = 4; % truncation parameters as in remark 3.3
-k_tr_n = k_tr;
-k_tr_m = 0;
-N = 6; % number of the resonator
-spacing = 10; lij = ones(1,N-1).*spacing; % spacing between the resonators
-len = 2; li = ones(1,N).*len; % length of the resonator
+k_tr = 6; % truncation parameters as in remark 3.3
+N = 4; % number of the resonator
+spacing = 1000; lij = ones(1,N-1).*spacing; % spacing between the resonators
+len = 0.5; li = ones(1,N).*len; % length of the resonator
 L = sum(li)+sum(lij); % length of the unit cell
 Ls = zeros(2*N-1,1);
 Ls(1:2:end) = li;
@@ -144,30 +142,30 @@ for i = 1:N
 end
 
 
-% right incident wave
-uin_l = @(x,t,n) 0; vin_l = @(x,n) 0; dx_vin_l = @(x,n) 0;
-uin_r = @(x,t,n) exp(sqrt(-1)*(-(k0).*x+w0.*t)).*(x>xp(end)).*(n==0); % right incident wave
-vin_r = @(x,n) exp(sqrt(-1)*(-(k0).*x)).*(x>xp(end)).*(n==0); % n-th mode of right incident wave
-dx_vin_r = @(x,n) -sqrt(-1)*k0*exp(sqrt(-1)*(-(k0).*x)).*(x>xp(end)).*(n==0); % derivative of right incident wave
-
-% Compute solution coefficients
-MatcalA = getMatcalA(N,lij,xm,xp,k_tr,w_op,Omega,rs,ks,vr,delta,v0); % matrix \mathcal{A}
-MatcalF = getF_lr(k_tr, N, delta, xm, xp, dx_vin_l, dx_vin_r); % vector \mathcal{F}
-sol_r = MatcalA\MatcalF; % solve for the interior coefficients, vector \mathbf{w}
+% % right incident wave
+% uin_l = @(x,t,n) 0; vin_l = @(x,n) 0; dx_vin_l = @(x,n) 0;
+% uin_r = @(x,t,n) exp(sqrt(-1)*(-(k0).*x+w0.*t)).*(x>xp(end)).*(n==0); % right incident wave
+% vin_r = @(x,n) exp(sqrt(-1)*(-(k0).*x)).*(x>xp(end)).*(n==0); % n-th mode of right incident wave
+% dx_vin_r = @(x,n) -sqrt(-1)*k0*exp(sqrt(-1)*(-(k0).*x)).*(x>xp(end)).*(n==0); % derivative of right incident wave
+% 
+% % Compute solution coefficients
+% MatcalA = getMatcalA(N,lij,xm,xp,k_tr,w_op,Omega,rs,ks,vr,delta,v0); % matrix \mathcal{A}
+% MatcalF = getF_lr(k_tr, N, delta, xm, xp, dx_vin_l, dx_vin_r); % vector \mathcal{F}
+% sol_r = MatcalA\MatcalF; % solve for the interior coefficients, vector \mathbf{w}
 
 us_eval_x_r = zeros(1,len_xs);
 us_eval_z_r = zeros(N,len_zs);
-usx_r = @(x) N*(uin_l(x,t,0)+uin_r(x,t,0)) + get_us_lr(x, t, N, xm, xp, lij, k_tr, v0, w_op, Omega, rs, ks, vr, sol_r, w_res, k0, vin_l, vin_r); % scattered wave field as a function of x for fixed time t, according to formula (31)
+% usx_r = @(x) N*(uin_l(x,t,0)+uin_r(x,t,0)) + get_us_lr(x, t, N, xm, xp, lij, k_tr, v0, w_op, Omega, rs, ks, vr, sol_r, w_res, k0, vin_l, vin_r); % scattered wave field as a function of x for fixed time t, according to formula (31)
 
-for i = 1:len_xs
-    us_eval_x_r(i) = usx_r(xs(i));
-end
-
-for i = 1:N
-    for j = 1:len_zs
-        us_eval_z_r(i,j) = usx_r(zs(i,j));
-    end
-end
+% for i = 1:len_xs
+%     us_eval_x_r(i) = usx_r(xs(i));
+% end
+% 
+% for i = 1:N
+%     for j = 1:len_zs
+%         us_eval_z_r(i,j) = usx_r(zs(i,j));
+%     end
+% end
 
 % add left and right solutions
 us_eval_z = us_eval_z_l+us_eval_z_r;
