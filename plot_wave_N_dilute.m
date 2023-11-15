@@ -1,13 +1,13 @@
 %% Set structure setting
-clear 
-format long
+% clear 
+% format long
 
 % Settings for the material's structure
 k_tr = 4; % truncation parameters as in remark 3.3
-N = 3; % number of the resonator
+N = 2; % number of the resonator
 % L = 2000; % length of the domain \mathcal{U}
 % spacing = L/N; lij = ones(1,N-1).*spacing; % spacing between the resonators
-spacing = 100; lij = ones(1,N-1).*spacing; % spacing between the resonators
+spacing = 800; lij = ones(1,N-1).*spacing; % spacing between the resonators
 len = 1; li = ones(1,N).*len; % length of the resonator
 L = sum(li)+sum(lij); % length of the unit cell
 Ls = zeros(2*N-1,1);
@@ -165,11 +165,11 @@ for k = 1:length(all_uxs_in)
     all_uxs(k) = all_uxs_sc(k)+all_uxs_in(k);
 end
 
-% % Create plots of the scattered, incident and total wave field (left)
-% [fig1, fig2, fig3] = create_plots(all_xs,t,all_uxs_l,all_uxs_in_l,all_uxs_l+all_uxs_in_l);
-% 
-% % Create plots of the scattered, incident and total wave field (right)
-% [fig4, fig5, fig6] = create_plots(all_xs,t,all_uxs_r,all_uxs_in_r,all_uxs_r+all_uxs_in_r);
+% Create plots of the scattered, incident and total wave field (left)
+[fig1, fig2, fig3] = create_plots(all_xs,t,all_uxs_l,all_uxs_in_l,all_uxs_l+all_uxs_in_l);
+
+% Create plots of the scattered, incident and total wave field (right)
+[fig4, fig5, fig6] = create_plots(all_xs,t,all_uxs_r,all_uxs_in_r,all_uxs_r+all_uxs_in_r);
 
 % Create plots of the scattered, incident and total wave field
 [fig7, fig8, fig9] = create_plots(all_xs,t,all_uxs_sc,all_uxs_in,all_uxs);
