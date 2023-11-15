@@ -1,13 +1,13 @@
 %% Set structure setting
-% clear 
-% format long
+clear 
+format long
 
 % Settings for the material's structure
 k_tr = 4; % truncation parameters as in remark 3.3
 N = 2; % number of the resonator
 % L = 2000; % length of the domain \mathcal{U}
 % spacing = L/N; lij = ones(1,N-1).*spacing; % spacing between the resonators
-spacing = 100; lij = ones(1,N-1).*spacing; % spacing between the resonators
+spacing = 800; lij = ones(1,N-1).*spacing; % spacing between the resonators
 len = 1; li = ones(1,N).*len; % length of the resonator
 L = sum(li)+sum(lij); % length of the unit cell
 Ls = zeros(2*N-1,1);
@@ -46,8 +46,9 @@ end
 % Calculate subwavelength resonant frequency
 if N > 1
     C = make_capacitance_finite(N,lij); % capacitance matrix
-    w_muller = get_capacitance_approx_hot(epsilon_kappa,li,Omega,phase_kappa,delta,C,vr,v0,lij,xm,xp); % subwavelength resonant frequencies
-    w_res = w_muller(real(w_muller)>=0); % positive subwavelength resonant frequencies
+%     w_muller = get_capacitance_approx_hot(epsilon_kappa,li,Omega,phase_kappa,delta,C,vr,v0,lij,xm,xp); % subwavelength resonant frequencies
+%     w_res = w_muller(real(w_muller)>=0); % positive subwavelength resonant frequencies
+    w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0)*ones(1,N);
     w_op = w_res(1)+ 0.0002; % operating frequency
     w0 = 0.00088; %w0 = real(w_res(1))+0.02; % quasifrequency of incident wave
 else
@@ -83,7 +84,7 @@ sol = MatcalA\MatcalF; % solve for the interior coefficients, vector \mathbf{w}
 
 us_eval_x = zeros(1,len_xs);
 us_eval_z = zeros(1,len_zs);
-usx = @(x) N*uin(x,t) + get_us(x, t, N, xm, xp, lij, k_tr, v0, w_op, Omega, rs, ks, vr, sol, w_res, k0, vin); % scattered wave field as a function of x for fixed time t, according to formula (31)
+usx = @(x) uin(x,t) + get_us(x, t, N, xm, xp, lij, k_tr, v0, w_op, Omega, rs, ks, vr, sol, w_res, k0, vin); % scattered wave field as a function of x for fixed time t, according to formula (31)
 
 for i = 1:len_xs
     us_eval_x(i) = usx(xs(i));
@@ -120,7 +121,47 @@ end
 
 %% Iterate over epsilon and create plot
 
-all_epsk = [0,0.1,0.2,0.3];
+all_epsk = [0,0.1,0.2,0.3,0.4,0.5,0.6];
+
+% Settings for the material's structure
+k_tr = 4; % truncation parameters as in remark 3.3
+N = 7; % number of the resonator
+% L = 2000; % length of the domain \mathcal{U}
+% spacing = L/N; lij = ones(1,N-1).*spacing; % spacing between the resonators
+spacing = 10; lij = ones(1,N-1).*spacing; % spacing between the resonators
+len = 2; li = ones(1,N).*len; % length of the resonator
+L = sum(li)+sum(lij); % length of the unit cell
+Ls = zeros(2*N-1,1);
+Ls(1:2:end) = li;
+Ls(2:2:end) = lij;
+xipm = [0,cumsum(Ls)']-(len*(N/2)+spacing*(N-1)/2); % all boundary points, make sure the resonators are aligned symmetrically wrt 0
+xm = xipm(1:2:end); % LHS boundary points
+xp = xipm(2:2:end); % RHS boundary points
+z = (xm+xp)./2; % centers of resonators
+delta = 0.0001; % small contrast parameter
+t = 0; % time
+
+vr = 1; % wave speed inside the resonators
+v0 = 1; % wave speed outside the resonators
+
+% Define evaluation points
+len_xs = 800;
+len_zs = 80;
+xs = linspace(xm(1)-spacing,xp(end)+spacing,len_xs);
+zs = zeros(N,len_zs);
+for i = 1:N
+    zs(i,:) = linspace(xm(i),xp(i),len_zs);
+end
+
+% Setting for the material's time-modulation
+Omega = 0.03; % modulation frequency
+T = 2*pi/Omega;
+phase_kappa = zeros(1,N); % modulation phases of kappa
+phase_rho = zeros(1,N); % modulation phases of rho
+for i = 1:(N-1)
+    phase_kappa(i+1) = pi/i;
+    phase_rho(i+1) = pi/i;
+end
 
 % prepare figure
 fig = figure();
@@ -143,7 +184,7 @@ for epsilon_kappa = all_epsk
     w_muller = get_capacitance_approx_hot(epsilon_kappa,li,Omega,phase_kappa,delta,C,vr,v0,lij,xm,xp); % subwavelength resonant frequencies
     w_res = w_muller(real(w_muller)>=0); % positive subwavelength resonant frequencies
     w_op = w_res(1)+ 0.0002; % operating frequency
-    w0 = 0.01;%real(w_res(1))+0.02; % quasifrequency of incident wave
+    w0 = 0.00088;%real(w_res(1))+0.02; % quasifrequency of incident wave
     k_op = w_op/v0; % operating wave number outside of the resonator
     k0 = w0/v0; % wave number of incident frequency
 
@@ -154,7 +195,7 @@ for epsilon_kappa = all_epsk
     
     us_eval_x = zeros(1,len_xs);
     us_eval_z = zeros(1,len_zs);
-    usx = @(x) N*uin(x,t) + get_us(x, t, N, xm, xp, lij, k_tr, v0, w_op, Omega, rs, ks, vr, sol, w_res, k0); % scattered wave field as a function of x for fixed time t, according to formula (31)
+    usx = @(x) uin(x,t) + get_us(x, t, N, xm, xp, lij, k_tr, v0, w_op, Omega, rs, ks, vr, sol, w_res, k0, vin); % scattered wave field as a function of x for fixed time t, according to formula (31)
 
     for i = 1:len_xs
         us_eval_x(i) = usx(xs(i));
