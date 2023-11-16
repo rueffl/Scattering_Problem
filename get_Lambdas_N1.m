@@ -1,6 +1,6 @@
 function [all_Ln] = get_Lambdas_N1(x, k_tr, w, Omega, rs, ks, vr, v0, z, sol, vin_l, vin_r)
-%GET_LAMBDAS   Computes the coefficients \Lambda_n, for all n=-K,...,K for
-%              the single-resonator case.
+%GET_LAMBDAS_N1   Computes the coefficients \Lambda_n, for all n=-K,...,K for
+%                 the single-resonator case.
 %   x:      spatial coordinate
 %   k_tr:   truncation parameter
 %   w:      quasiwavefrequency
