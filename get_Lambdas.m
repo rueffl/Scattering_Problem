@@ -1,27 +1,19 @@
-function [all_Ln] = get_Lambdas(xm, xp, k_tr, w, Omega, rs, ks, vr, delta, v0, k, k_0, z, sol)
+function [all_Ln] = get_Lambdas(x, k_tr, w, Omega, rs, ks, vr, v0, z, sol, vin_l, vin_r)
 %GET_LAMBDAS   Computes the coefficients \Lambda_n, for all n=-K,...,K for
 %              the single-resonator case.
-%   xim:    left boundary points of all resonators
-%   xip:    right boundary points of all resonators
+%   x:      spatial coordinate
 %   k_tr:   truncation parameter
 %   w:      quasiwavefrequency
 %   Omega:  periodicity of time modulations
 %   rs:     Fourier coefficients of \rho_i(t)
 %   ks:     Fourier coefficients of \kappa_i(t)
 %   vr:     wave speed inside the resonators
-%   delta:  contrast parameter
-%   v:      wave speed outside the resonators
-%   k:      wave number outside the resonators 
-%   k_0:    wave number of incident wave
+%   v0:     wave speed outside the resonators
 %   z:      resonator centre
+%   sol:    vector of coefficients a_j and b_j
+%   vin_l:  left incident wave field, fct of x and n
+%   vin_r:  right incident wave field, fct of x and n
 
-    % Compute solution coefficients
-    if isempty(sol)
-        N = 1; lij = [];
-        A = getMatcalA(N, lij, xm(1), xp(1), k_tr, w, Omega, rs, ks, vr, delta, v0); % matrix \mathcal{A}
-        F = getF(k_tr, N, delta, k, k_0, xm); % vector \mathcal{F}
-        sol = linsolve(A,F); % solve \mathcal{A}\mathbf{w}=\mathcal{F}
-    end
     as = sol(1:2:end-1); bs = sol(2:2:end); % coefficients of interior solution
     
     % Compute Lambda_n
@@ -34,6 +26,11 @@ function [all_Ln] = get_Lambdas(xm, xp, k_tr, w, Omega, rs, ks, vr, delta, v0, k
         l = sqrt(l);
         for j = -k_tr:k_tr
             Ln = Ln + (as(k_tr+1+j)*exp(sqrt(-1)*l(k_tr+1-j)*z)+bs(k_tr+1+j)*exp(-sqrt(-1)*l(k_tr+1-j)*z))*fi(n+k_tr+1,k_tr+1+j); % define Lambda_n
+        end
+        if x <= z % left of the resonator
+            Ln = Ln - vin_l(z-0.00001,n);
+        elseif x >= z % right of the resonator
+            Ln = Ln - vin_r(z+0.00001,n);
         end
         all_Ln(n+k_tr+1) = 2*sqrt(-1).*kn.*Ln;
     end
