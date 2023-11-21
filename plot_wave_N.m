@@ -79,8 +79,10 @@ end
 
 % Compute solution coefficients
 MatcalA = getMatcalA(N,lij,xm,xp,k_tr,w_op,Omega,rs,ks,vr,delta,v0); % matrix \mathcal{A}
-MatcalF = getF_lr(k_tr, N, delta, xm, xp, dx_vin, @(x,n) 0); %getF(k_tr, N, delta, k_op, k0, xm); % vector \mathcal{F}
-sol = MatcalA\MatcalF; % solve for the interior coefficients, vector \mathbf{w}
+MatcalF = getF_lr(k_tr, N, delta, xm, xp, dx_vin, @(x,n) 0); % vector \mathcal{F}
+N_vin = getN_vin(k_tr, N, delta, xm, xp, w_op, Omega, v0, lij, vin, @(x,n) 0); % matrix-vector product \mathcal{N}v^{in}
+RHS = MatcalF + N_vin;
+sol = MatcalA\RHS; % solve for the interior coefficients, vector \mathbf{w}
 
 us_eval_x = zeros(1,len_xs);
 us_eval_z = zeros(1,len_zs);
@@ -191,7 +193,9 @@ for epsilon_kappa = all_epsk
     % Compute solution coefficients
     MatcalA = getMatcalA(N,lij,xm,xp,k_tr,w_op,Omega,rs,ks,vr,delta,v0); % matrix \mathcal{A}
     MatcalF = getF(k_tr, N, delta, k_op, k0, xm); % vector \mathcal{F}
-    sol = MatcalA\MatcalF; % solve for the interior coefficients, vector \mathbf{w}
+    N_vin = getN_vin(k_tr, N, delta, xm, xp, w_op, Omega, v0, lij, vin, @(x,n) 0); % matrix-vector product \mathcal{N}v^{in}
+    RHS = MatcalF + N_vin;
+    sol = MatcalA\RHS; % solve for the interior coefficients, vector \mathbf{w}
     
     us_eval_x = zeros(1,len_xs);
     us_eval_z = zeros(1,len_zs);
