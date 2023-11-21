@@ -21,4 +21,5 @@ function [F] = getF_lr(k_tr, N, delta, xim, xip, dx_vin_l, dx_vin_r)
     end
 
 
+
 end
