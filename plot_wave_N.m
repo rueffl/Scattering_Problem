@@ -7,7 +7,7 @@ k_tr = 4; % truncation parameters as in remark 3.3
 N = 2; % number of the resonator
 % L = 2000; % length of the domain \mathcal{U}
 % spacing = L/N; lij = ones(1,N-1).*spacing; % spacing between the resonators
-spacing = 800; lij = ones(1,N-1).*spacing; % spacing between the resonators
+spacing = 10; lij = ones(1,N-1).*spacing; % spacing between the resonators
 len = 1; li = ones(1,N).*len; % length of the resonator
 L = sum(li)+sum(lij); % length of the unit cell
 Ls = zeros(2*N-1,1);
@@ -45,7 +45,7 @@ end
 
 % Calculate subwavelength resonant frequency
 if N > 1
-    C = make_capacitance_finite(N,lij); % capacitance matrix
+%     C = make_capacitance_finite(N,lij); % capacitance matrix
 %     w_muller = get_capacitance_approx_hot(epsilon_kappa,li,Omega,phase_kappa,delta,C,vr,v0,lij,xm,xp); % subwavelength resonant frequencies
 %     w_res = w_muller(real(w_muller)>=0); % positive subwavelength resonant frequencies
     w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0)*ones(1,N);
