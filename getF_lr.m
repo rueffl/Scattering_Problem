@@ -14,7 +14,7 @@ function [F] = getF_lr(k_tr, N, delta, xim, xip, dx_vin_l, dx_vin_r)
     for n = k_tr:(-1):-k_tr
         Fn = zeros(2*N,1);
         for i = 1:N
-            Fn(2*i-1) = delta*dx_vin_l(xim(i)-0.0000001,n);
+            Fn(2*i-1) = -delta*dx_vin_l(xim(i)-0.0000001,n);
             Fn(2*i) = delta*dx_vin_r(xip(i)+0.0000001,n);
         end
         F = [F;Fn];
