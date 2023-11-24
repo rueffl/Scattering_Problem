@@ -33,6 +33,7 @@ function [all_Ln] = get_Lambdas_N1(x, k_tr, w, Omega, rs, ks, vr, v0, z, sol, vi
             Ln = Ln - vin_r(z+0.00001,n);
         end
         all_Ln(n+k_tr+1) = 2*sqrt(-1).*kn.*Ln;
+%         all_Ln(n+k_tr+1) = Ln;
     end
 
 end
