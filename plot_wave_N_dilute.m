@@ -76,7 +76,9 @@ for i = 1:N
     % Compute solution coefficients
     MatcalA = getMatcalA(1,[],xm(i),xp(i),k_tr,w_op,Omega,rs(i,:),ks(i,:),vr,delta,v0); % matrix \mathcal{A}
     MatcalF = getF_lr(k_tr, 1, delta, xm(i), xp(i), dx_vin_l, dx_vin_r); % vector \mathcal{F}
-    sol_l = MatcalA\MatcalF; % solve for the interior coefficients, vector \mathbf{w}
+    N_vin = getN_vin(k_tr, 1, delta, xm(i), xp(i), w_op, Omega, v0, [], vin_l, vin_r); % matrix-vector product \mathcal{N}v^{in}
+    RHS = MatcalF + N_vin;
+    sol_l = MatcalA\RHS; % solve for the interior coefficients, vector \mathbf{w}
 
     % Compute the eigenvectors and the sqrt of the eigenvalues of C_i
     C = getC(k_tr, i, w_op, Omega, rs, ks, vr);
@@ -98,7 +100,9 @@ for i = (N-1):(-1):1
     % Compute solution coefficients
     MatcalA = getMatcalA(1,[],xm(i),xp(i),k_tr,w_op,Omega,rs(i,:),ks(i,:),vr,delta,v0); % matrix \mathcal{A}
     MatcalF = getF_lr(k_tr, 1, delta, xm(i), xp(i), dx_vin_l, dx_vin_r); % vector \mathcal{F}
-    sol_r = MatcalA\MatcalF; % solve for the interior coefficients, vector \mathbf{w}
+    N_vin = getN_vin(k_tr, 1, delta, xm(i), xp(i), w_op, Omega, v0, [], vin_l, vin_r); % matrix-vector product \mathcal{N}v^{in}
+    RHS = MatcalF + N_vin;
+    sol_r = MatcalA\RHS; % solve for the interior coefficients, vector \mathbf{w}
 
     % Compute the eigenvectors and the sqrt of the eigenvalues of C_i
     C = getC(k_tr, i, w_op, Omega, rs, ks, vr);
@@ -165,11 +169,11 @@ for k = 1:length(all_uxs_in)
     all_uxs(k) = all_uxs_sc(k)+all_uxs_in(k);
 end
 
-% Create plots of the scattered, incident and total wave field (left)
-[fig1, fig2, fig3] = create_plots(all_xs,t,all_uxs_l,all_uxs_in_l,all_uxs_l+all_uxs_in_l);
-
-% Create plots of the scattered, incident and total wave field (right)
-[fig4, fig5, fig6] = create_plots(all_xs,t,all_uxs_r,all_uxs_in_r,all_uxs_r+all_uxs_in_r);
+% % Create plots of the scattered, incident and total wave field (left)
+% [fig1, fig2, fig3] = create_plots(all_xs,t,all_uxs_l,all_uxs_in_l,all_uxs_l+all_uxs_in_l);
+% 
+% % Create plots of the scattered, incident and total wave field (right)
+% [fig4, fig5, fig6] = create_plots(all_xs,t,all_uxs_r,all_uxs_in_r,all_uxs_r+all_uxs_in_r);
 
 % Create plots of the scattered, incident and total wave field
 [fig7, fig8, fig9] = create_plots(all_xs,t,all_uxs_sc,all_uxs_in,all_uxs);
