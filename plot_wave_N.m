@@ -4,11 +4,11 @@ format long
 
 % Settings for the material's structure
 k_tr = 4; % truncation parameters as in remark 3.3
-N = 2; % number of the resonator
+N = 6; % number of the resonator
 % L = 2000; % length of the domain \mathcal{U}
 % spacing = L/N; lij = ones(1,N-1).*spacing; % spacing between the resonators
 spacing = 10; lij = ones(1,N-1).*spacing; % spacing between the resonators
-len = 1; li = ones(1,N).*len; % length of the resonator
+len = 2; li = ones(1,N).*len; % length of the resonator
 L = sum(li)+sum(lij); % length of the unit cell
 Ls = zeros(2*N-1,1);
 Ls(1:2:end) = li;
@@ -45,16 +45,13 @@ end
 
 % Calculate subwavelength resonant frequency
 if N > 1
-%     C = make_capacitance_finite(N,lij); % capacitance matrix
-%     w_muller = get_capacitance_approx_hot(epsilon_kappa,li,Omega,phase_kappa,delta,C,vr,v0,lij,xm,xp); % subwavelength resonant frequencies
-%     w_res = w_muller(real(w_muller)>=0); % positive subwavelength resonant frequencies
     w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0)*ones(1,N);
     w_op = w_res(1)+ 0.0002; % operating frequency
-    w0 = 0.00088; %w0 = real(w_res(1))+0.02; % quasifrequency of incident wave
+    w0 = w_op; %w0 = real(w_res(1))+0.02; % quasifrequency of incident wave
 else
     w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0); % non-zero subwavelength resonant frequency
     w_op = w_res+0.0002; % operating frequency
-    w0 = 0.00088; % quasifrequency of incident wave
+    w0 = w_op; % quasifrequency of incident wave
 end
 k_op = w_op/v0; % operating wave number outside of the resonator
 k0 = w0/v0; % wave number of incident frequency
@@ -121,16 +118,15 @@ for i = 1:N
     plot(zs(i,:),imag(us_eval_z),'r-','DisplayName','Exact',markersize=8,linewidth=2)
 end
 
+
 %% Iterate over epsilon and create plot
 
-all_epsk = [0,0.1,0.2,0.3,0.4,0.5,0.6];
+all_epsk = [0,0.1,0.2,0.3,0.4];
 
 % Settings for the material's structure
 k_tr = 4; % truncation parameters as in remark 3.3
-N = 7; % number of the resonator
-% L = 2000; % length of the domain \mathcal{U}
-% spacing = L/N; lij = ones(1,N-1).*spacing; % spacing between the resonators
-spacing = 10; lij = ones(1,N-1).*spacing; % spacing between the resonators
+N = 6; % number of the resonator
+spacing = 8; lij = ones(1,N-1).*spacing; % spacing between the resonators
 len = 2; li = ones(1,N).*len; % length of the resonator
 L = sum(li)+sum(lij); % length of the unit cell
 Ls = zeros(2*N-1,1);
@@ -149,7 +145,7 @@ v0 = 1; % wave speed outside the resonators
 % Define evaluation points
 len_xs = 800;
 len_zs = 80;
-xs = linspace(xm(1)-spacing,xp(end)+spacing,len_xs);
+xs = linspace(xm(1),xp(end)+spacing,len_xs);
 zs = zeros(N,len_zs);
 for i = 1:N
     zs(i,:) = linspace(xm(i),xp(i),len_zs);
@@ -169,6 +165,7 @@ end
 fig = figure();
 fig.Position = [263,725,982,352];
 c_map = parula(length(all_epsk)+2); ic = 1;
+O = zeros(2*k_tr+1,length(all_epsk));
 
 for epsilon_kappa = all_epsk
 
@@ -186,7 +183,7 @@ for epsilon_kappa = all_epsk
     w_muller = get_capacitance_approx_hot(epsilon_kappa,li,Omega,phase_kappa,delta,C,vr,v0,lij,xm,xp); % subwavelength resonant frequencies
     w_res = w_muller(real(w_muller)>=0); % positive subwavelength resonant frequencies
     w_op = w_res(1)+ 0.0002; % operating frequency
-    w0 = 0.00088;%real(w_res(1))+0.02; % quasifrequency of incident wave
+    w0 = w_op;%real(w_res(1))+0.02; % quasifrequency of incident wave
     k_op = w_op/v0; % operating wave number outside of the resonator
     k0 = w0/v0; % wave number of incident frequency
 
@@ -226,6 +223,8 @@ for epsilon_kappa = all_epsk
         plot(zs(i,:),imag(us_eval_z),'-','HandleVisibility','off','Color',c_map(ic,:),markersize=8,linewidth=2)
     end
 
+    [tns,rns] = get_tr(k_tr, w_op, Omega, rs, ks, vr, xm, xp, sol, lij, vin, @(x,n) 0);
+    O(:,ic) = abs(tns(:,1)).^2+abs(rns(:,end)).^2;
     ic = ic+1;
     
 end
@@ -233,12 +232,12 @@ end
 subplot(1,2,1)
 xlim([xs(1) xs(end)])
 xlabel('$x$',Interpreter='latex',FontSize=18)
-ylabel(strcat('Re$(u^{\mathrm{sc}}(x,$',num2str(t),'$))$'),Interpreter='latex',FontSize=18)
+ylabel(strcat('Re$(u(x,$',num2str(t),'$))$'),Interpreter='latex',FontSize=18)
 
 subplot(1,2,2)
 xlim([xs(1) xs(end)])
 xlabel('$x$',Interpreter='latex',FontSize=18)
-ylabel(strcat('Im$(u^{\mathrm{sc}}(x,$',num2str(t),'$))$'),Interpreter='latex',FontSize=18)
+ylabel(strcat('Im$(u(x,$',num2str(t),'$))$'),Interpreter='latex',FontSize=18)
 
 legend('show',interpreter='latex',fontsize=18,location='southoutside')
 
