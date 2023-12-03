@@ -47,7 +47,7 @@ for len = lij_s
     xp = xipm(2:2:end); % RHS boundary points
     C = make_capacitance_finite(N,lij);
     w_out = get_capacitance_approx(epsilon_kappa,epsilon_rho,li,Omega,phase_rho,phase_kappa,delta,C);
-    w_out_hot = get_capacitance_approx_hot(epsilon_kappa,li,Omega,phase_kappa,delta,C,vr,v0,lij,xm,xp);
+    w_out_hot = get_capacitance_approx_hot(epsilon_kappa,li,Omega,phase_kappa,delta,C,vr,v0); % subwavelength resonant frequencies; get_capacitance_approx_hot(epsilon_kappa,li,Omega,phase_kappa,delta,C,vr,v0,lij,xm,xp);
     if len == lij_s(end)
         plot(ones(1,2*N).*len,real(w_out),'.','Color',gray,'MarkerSize',8,'DisplayName','Order $O(\delta)$ approximation')
         plot(ones(1,2*N).*len,real(w_out_hot),'k.','MarkerSize',8,'DisplayName','Order $O(\delta^{2/3})$ approximation')
