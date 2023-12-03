@@ -4,7 +4,6 @@ function xplus = muller(initial_guess,N,lij,xm,xp,k_tr,Omega,rs,ks,vr,delta,v0)
     % define three initial guesses
     xnm2 = initial_guess*(1+0.01);
     xnm1 = initial_guess*(1+0.01*exp(1i*2*pi/3));
-    % xn = initial_guess*(1+0.01*exp(1i*4*pi/3));
     xn = initial_guess;
     % tolerance for exiting the mullers method
     tol = 1e-12;
