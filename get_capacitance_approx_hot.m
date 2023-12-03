@@ -31,6 +31,7 @@ function out = make_invM2(t,delta,vr,v0,li,epsilon_kappa,phase_kappa,Omega)
 %   phase_kappa:    phase of the modification of kappa
 %   Omega:          frequency of the modulation of kappa
 
+    N = length(phase_kappa); % number of resonators
     kappa = @(t) 1./(1+epsilon_kappa.*cos(Omega.*t+phase_kappa)); % function kappa(t)
     D = zeros(N,N); D(1,1) = 1; D(N,N) = 1; % matrix D
     L = diag(li); % matrix L
@@ -54,6 +55,7 @@ function out = make_M1(t,delta,vr,li,epsilon_kappa,phase_kappa,Omega,C)
 %   Omega:          frequency of the modulation of kappa
 %   C:              capacitance matrix
 
+    N = length(phase_kappa); % number of resonators
     deriv_kappainv = @(t) -Omega.*epsilon_kappa.*sin(Omega.*t+phase_kappa); % function kappa'(t)
     LK = diag(li.*(1./(delta*vr^2)).*deriv_kappainv(t));
     Z = zeros(N,N);
