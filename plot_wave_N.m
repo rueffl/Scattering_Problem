@@ -367,6 +367,18 @@ legend('show',interpreter='latex',fontsize=18,location='southoutside')
 
 %% Create 3D plot of the total wave field
 
+% Settings for the material's structure
+k_tr = 4; % truncation parameters as in remark 3.3
+N = 6; % number of the resonator
+spacing = 10; lij = ones(1,N-1).*spacing; % spacing between the resonators
+len = 2; li = ones(1,N).*len; % length of the resonator
+Ls = zeros(2*N-1,1);
+Ls(1:2:end) = li;
+Ls(2:2:end) = lij;
+xipm = [0,cumsum(Ls)']-(len*(N/2)+spacing*(N-1)/2); % all boundary points, make sure the resonators are aligned symmetrically wrt 0
+xm = xipm(1:2:end); % LHS boundary points
+xp = xipm(2:2:end); % RHS boundary points
+
 xs = linspace(xm(1),xp(end),200);
 ts = linspace(0,220,200);
 uxt = zeros(200,200);
@@ -377,12 +389,16 @@ for it = 1:200
     end
 end
 
-plot3(xs,ts,uxt)
+s = surf(xs,ts,abs(uxt),'EdgeColor','interp');
+s.EdgeColor = 'none';
+xlabel('$x$',interpreter='latex')
+ylabel('$t$',interpreter='latex')
+zlabel('$u(x,t)$',interpreter='latex')
 
 
 %% function for 3D plot
 
-function uxt = total_u_xt(x,t)
+function uxt = total_u_xt(xi,ti)
 
     % Settings for the material's structure
     k_tr = 4; % truncation parameters as in remark 3.3
@@ -439,9 +455,7 @@ function uxt = total_u_xt(x,t)
     RHS = MatcalF + N_vin;
     sol = MatcalA\RHS; % solve for the interior coefficients, vector \mathbf{w}
 
-    usx = @(x) uin(x,t) + get_us(x, t, N, xm, xp, lij, k_tr, v0, w_op, Omega, rs, ks, vr, sol, w_res, k0, vin); % scattered wave field as a function of x for fixed time t, according to formula (31)
-
-    uxt = usx(x);
+    uxt = uin(xi,ti) + get_us(xi, ti, N, xm, xp, lij, k_tr, v0, w_op, Omega, rs, ks, vr, sol, w_res, k0, vin); % scattered wave field as a function of x for fixed time t, according to formula (31)
 
 end
 
