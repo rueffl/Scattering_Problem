@@ -32,7 +32,7 @@ for i = 1:(N-1)
     phase_kappa(i+1) = pi/i;
     phase_rho(i+1) = pi/i;
 end
-epsilon_kappa = 0; % modulation amplitude of kappa
+epsilon_kappa = 0.2; % modulation amplitude of kappa
 epsilon_rho = 0; % modulation amplitude of rho
 rs = []; % Fourier coefficients of 1/rho
 ks = []; % Fourier coefficients of 1/kappa
@@ -389,10 +389,10 @@ for it = 1:200
     end
 end
 
-s = surf(xs,ts,abs(uxt),'EdgeColor','interp');
+s = surf(ts,xs,real(uxt),'EdgeColor','interp');
 s.EdgeColor = 'none';
-xlabel('$x$',interpreter='latex')
-ylabel('$t$',interpreter='latex')
+xlabel('$t$',interpreter='latex')
+ylabel('$x$',interpreter='latex')
 zlabel('$u(x,t)$',interpreter='latex')
 
 
@@ -424,7 +424,7 @@ function uxt = total_u_xt(xi,ti)
         phase_kappa(i+1) = pi/i;
         phase_rho(i+1) = pi/i;
     end
-    epsilon_kappa = 0.2;
+    epsilon_kappa = 0;
     epsilon_rho = 0;
     rs = []; % Fourier coefficients of 1/rho
     ks = []; % Fourier coefficients of 1/kappa
