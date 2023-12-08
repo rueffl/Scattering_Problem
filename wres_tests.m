@@ -35,57 +35,168 @@ end
 epsilon_rho = 0; % modulation amplitude of rho
 
 
-%% Apply Muller's method
+%% Apply vector search method
 
-% define three initial guesses
-initial_guess = 0.1;
-xnm2 = initial_guess*(1+0.01);
-xnm1 = initial_guess*(1-0.01);
-xn = initial_guess;
-% tolerance for exiting the mullers method
+% tolerance for exiting the vector search method
 tol = 1e-10;
-
-% iteration number
-i = 0;
-xplus = xn;
 
 % function to iterate with
 p = @(ek) find_imagzero(ek,li,Omega,phase_kappa,delta,vr,v0,lij);
 
-% eks = linspace(0,4,400); p_eks = zeros(1,length(eks)); k = 1;
-% for ek = eks
-%     p_eks(k) = p(ek);
-%     k = k+1;
-% end
+eks = linspace(0,4,800); p_eks = zeros(1,length(eks)); k = 1;
+for ek = eks
+    p_eks(k) = p(ek);
+    k = k+1;
+end
+% figure();
 % plot(eks,p_eks,'-','LineWidth',2);
 
-% implementation of mullers method
-while (abs(p(xn)) > tol)
+% find minimum
+[min_val,idx] = min(p_eks);
+min_eks = eks(idx);
 
-    q = (xn - xnm1)/(xnm1 - xnm2);
-    a = q*p(xn) - q*(1+q)*p(xnm1) + q^2*p(xnm2);
-    b = (2*q + 1)*p(xn) - (1+q)^2*p(xnm1) + q^2*p(xnm2);
-    c = (1 + q)*p(xn);
-            
-    r = xn - (xn - xnm1)*((2*c)/(b + sqrt(b^2 - 4*a*c)));
-    s = xn - (xn - xnm1)*((2*c)/(b - sqrt(b^2 - 4*a*c)));
-    
-    if(abs(p(r)) < abs(p(s)))
-        xplus = r;
-        else
-        xplus = s;
+%% Determine regions
+
+w_res = @(epsilon_kappa,idx) imag(omega_epsk(epsilon_kappa,li,Omega,phase_kappa,delta,vr,v0,lij,idx));
+all_epsk = linspace(0,4,800);
+w_epsk = zeros(2*N,length(all_epsk));
+
+% prepare plot
+fig = figure();
+hold on
+
+change_idx = [];
+change_val = [];
+val_old = all_epsk(1);
+if N == 1
+
+    idx = 1;
+    for i = 1:length(all_epsk)
+        w_epsk(idx,i) = w_res(all_epsk(i),idx);
+        % find change of sign
+        if i > 1
+            if w_epsk(idx,i)*w_epsk(idx,i-1) < 0
+                change_idx = [change_idx,i];
+            end
+        end
+        change_val = all_epsk(change_idx);
     end
 
-    xnm2 = xnm1;
-    xnm1 = xn;
-    xn = xplus;
+    for i = 1:length(change_val)
+        val = change_val(i);
+        inBetweenx = [val_old.*ones(1,100),fliplr(val.*ones(1,100))];
+        inBetweeny = [linspace(min(w_epsk(idx,:))-0.005,max(w_epsk(idx,:))+0.005,100),fliplr(linspace(min(w_epsk(idx,:))-0.005,max(w_epsk(idx,:))+0.005,100))];
+        if w_epsk(idx,change_idx(i)-1) < w_epsk(idx,change_idx(i)) 
+            str = '#f3846c'; % red
+            color = sscanf(str(2:end),'%2x%2x%2x',[1 3])/255;
+            fill(inBetweenx,inBetweeny,color,'FaceAlpha',0.3,'LineStyle','none')
+        else
+            str = '#74ea91'; % green
+            color = sscanf(str(2:end),'%2x%2x%2x',[1 3])/255;
+            fill(inBetweenx,inBetweeny,color,'FaceAlpha',0.3,'LineStyle','none')
+        end
+        if abs(w_epsk(idx,change_idx(i)-1) - w_epsk(idx,change_idx(i))) < 10^(-4)
+            str = '#f98204'; % orange
+            color = sscanf(str(2:end),'%2x%2x%2x',[1 3])/255;
+            plot(val.*ones(1,100),linspace(min(w_epsk(idx,:))-0.005,max(w_epsk(idx,:))+0.005,100),'--','Color',color,markersize=8,linewidth=2)
+        end
+        val_old = val;
+    end
+    inBetweenx = [val_old.*ones(1,100),fliplr(all_epsk(end).*ones(1,100))];
+    inBetweeny = [linspace(min(w_epsk(idx,:))-0.005,max(w_epsk(idx,:))+0.005,100),fliplr(linspace(min(w_epsk(idx,:))-0.005,max(w_epsk(idx,:))+0.005,100))];
+    if w_epsk(idx,change_idx(i)-1) < w_epsk(idx,change_idx(i)) 
+        str = '#f3846c'; % red
+        color = sscanf(str(2:end),'%2x%2x%2x',[1 3])/255;
+        fill(inBetweenx,inBetweeny,color,'FaceAlpha',0.3,'LineStyle','none')
+    else
+        str = '#74ea91'; % green
+        color = sscanf(str(2:end),'%2x%2x%2x',[1 3])/255;
+        fill(inBetweenx,inBetweeny,color,'FaceAlpha',0.3,'LineStyle','none')
+    end
+
+    if abs(w_epsk(idx,change_idx(i)-1) - w_epsk(idx,change_idx(i))) < 10^(-4)
+        str = '#f98204'; % orange
+        color = sscanf(str(2:end),'%2x%2x%2x',[1 3])/255;
+        plot(val.*ones(1,100),linspace(min(w_epsk(idx,:))-0.005,max(w_epsk(idx,:))+0.005,100),'--','Color',color,markersize=8,linewidth=2)
+    end
+    plot(all_epsk,w_epsk(idx,:),'.k',markersize=8,linewidth=2)
+    xlabel('$\varepsilon_{\kappa}$','Interpreter','latex','fontsize',18)
+    ylabel('$\omega$','Interpreter','latex','fontsize',18)
+
+else
+
+    for idx = 1:2*N
+
+        subplot(2,N,idx)
+        hold on
+
+        change_idx = []; change_val = [];
+
+        for i = 1:length(all_epsk)
+            w_epsk(idx,i) = w_res(all_epsk(i),idx);
+            % find change of sign
+            if i > 1
+                if w_epsk(idx,i)*w_epsk(idx,i-1) < 0
+                    change_idx = [change_idx,i];
+                    change_val = [change_val,all_epsk(i)];
+                end
+            end
+        end
+
+        for i = 1:length(change_val)
+            val = change_val(i);
+            inBetweenx = [val_old.*ones(1,100),fliplr(val.*ones(1,100))];
+            inBetweeny = [linspace(min(w_epsk(idx,:))-0.005,max(w_epsk(idx,:))+0.005,100),fliplr(linspace(min(w_epsk(idx,:))-0.005,max(w_epsk(idx,:))+0.005,100))];
+            if w_epsk(idx,change_idx(i)-1) < w_epsk(idx,change_idx(i)) 
+                str = '#f3846c'; % red
+                color = sscanf(str(2:end),'%2x%2x%2x',[1 3])/255;
+                fill(inBetweenx,inBetweeny,color,'FaceAlpha',0.3,'LineStyle','none')
+            else
+                str = '#74ea91'; % green
+                color = sscanf(str(2:end),'%2x%2x%2x',[1 3])/255;
+                fill(inBetweenx,inBetweeny,color,'FaceAlpha',0.3,'LineStyle','none')
+            end
+            if abs(w_epsk(idx,change_idx(i)-1) - w_epsk(idx,change_idx(i))) < 10^(-4)
+                str = '#f98204'; % orange
+                color = sscanf(str(2:end),'%2x%2x%2x',[1 3])/255;
+                plot(val.*ones(1,100),linspace(min(w_epsk(idx,:))-0.005,max(w_epsk(idx,:))+0.005,100),'--','Color',color,markersize=8,linewidth=2)
+            end
+            val_old = val;
+        end
+        inBetweenx = [val_old.*ones(1,100),fliplr(all_epsk(end).*ones(1,100))];
+        inBetweeny = [linspace(min(w_epsk(idx,:))-0.005,max(w_epsk(idx,:))+0.005,100),fliplr(linspace(min(w_epsk(idx,:))-0.005,max(w_epsk(idx,:))+0.005,100))];
+        if w_epsk(change_idx(i)+5) < 0
+            str = '#f3846c'; % red
+            color = sscanf(str(2:end),'%2x%2x%2x',[1 3])/255;
+            fill(inBetweenx,inBetweeny,color,'FaceAlpha',0.3,'LineStyle','none')
+        else
+            str = '#74ea91'; % green
+            color = sscanf(str(2:end),'%2x%2x%2x',[1 3])/255;
+            fill(inBetweenx,inBetweeny,color,'FaceAlpha',0.3,'LineStyle','none')
+        end
     
-    i = i + 1;
-    disp(strcat('Iteration  ',num2str(i),' xn=',num2str(xn),' error=',num2str(p(xn))))
+        if abs(w_epsk(idx,change_idx(i)-1) - w_epsk(idx,change_idx(i))) < 10^(-4)
+            str = '#f98204'; % orange
+            color = sscanf(str(2:end),'%2x%2x%2x',[1 3])/255;
+            plot(val.*ones(1,100),linspace(min(w_epsk(idx,:))-0.005,max(w_epsk(idx,:))+0.005,100),'--','Color',color,markersize=8,linewidth=2)
+        end
+        plot(all_epsk,w_epsk(idx,:),'.k',markersize=8,linewidth=2)
+        xlabel('$\varepsilon_{\kappa}$','Interpreter','latex','fontsize',18)
+        ylabel('$\omega$','Interpreter','latex','fontsize',18)
+        
+%         for k = 1:2*N
+%             plot(all_epsk,w_epsk(k,:),'.k',markersize=8,linewidth=2)
+%         end
+
+    end
+
 end
 
 
-%% Function which we want to minimize
+
+
+
+%% Functions
 
 function [imag_w_res] = find_imagzero(epsilon_kappa,li,Omega,phase_kappa,delta,vr,v0,lij)
 % FIND_IMAGZERO function whose root must be found in order to determine setting st imaginary part of resonant frequency is zero
@@ -101,8 +212,8 @@ function [imag_w_res] = find_imagzero(epsilon_kappa,li,Omega,phase_kappa,delta,v
     N = length(phase_kappa);
     if N > 1
         C = make_capacitance_finite(N,lij); % capacitance matrix
-        w_muller = get_capacitance_approx_hot(epsilon_kappa,li,Omega,phase_kappa,delta,C,vr,v0); % subwavelength resonant frequencies
-        w_res = w_muller(real(w_muller)>=0); % positive subwavelength resonant frequencies
+        w_res = get_capacitance_approx_hot(epsilon_kappa,li,Omega,phase_kappa,delta,C,vr,v0); % subwavelength resonant frequencies
+%         w_res = w_res(real(w_res)>=0); % positive subwavelength resonant frequencies
     else
         w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,li,delta,vr,v0); % non-zero subwavelength resonant frequency
     end
@@ -110,6 +221,29 @@ function [imag_w_res] = find_imagzero(epsilon_kappa,li,Omega,phase_kappa,delta,v
 
 end
 
+function [w_res] = omega_epsk(epsilon_kappa,li,Omega,phase_kappa,delta,vr,v0,lij,idx)
+% FIND_IMAGZERO function whose root must be found in order to determine setting st imaginary part of resonant frequency is zero
+%   epsilon_kappa:  time-modulation amplitude of kappa
+%   li:             size of resonators
+%   Omega:          modulation frequency of kappa
+%   phase_kappa:    phase of time-modulated kappa
+%   delta:          contrast parameter
+%   vr:             wave speed inside resonators
+%   v0:             wave speed in the background medium
+%   lij:            spacing between the resonators
+%   idx:            index of omega of interest
+
+    N = length(phase_kappa);
+    if N > 1
+        C = make_capacitance_finite(N,lij); % capacitance matrix
+        w_res = get_capacitance_approx_hot(epsilon_kappa,li,Omega,phase_kappa,delta,C,vr,v0); % subwavelength resonant frequencies
+%         w_res = w_res(real(w_res)>=0); % positive subwavelength resonant frequencies
+    else
+        w_res = [get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,li,delta,vr,v0),0]; % non-zero subwavelength resonant frequency
+    end
+    w_res = w_res(idx);
+
+end
 
 
 
