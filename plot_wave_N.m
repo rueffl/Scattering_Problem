@@ -391,9 +391,18 @@ end
 
 s = surf(ts,xs,real(uxt),'EdgeColor','interp');
 s.EdgeColor = 'none';
+c = colorbar;
+c.Label.String = '$\mathrm{Re}(u(x,t))$';
 xlabel('$t$',interpreter='latex')
 ylabel('$x$',interpreter='latex')
-zlabel('$u(x,t)$',interpreter='latex')
+zlabel('$\mathrm{Re}(u(x,t))$',interpreter='latex')
+s = surf(ts,xs,imag(uxt),'EdgeColor','interp');
+s.EdgeColor = 'none';
+c = colorbar;
+c.Label.String = '$\mathrm{Im}(u(x,t))$';
+xlabel('$t$',interpreter='latex')
+ylabel('$x$',interpreter='latex')
+zlabel('$\mathrm{Im}(u(x,t))$',interpreter='latex')
 
 
 %% function for 3D plot
