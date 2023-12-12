@@ -51,7 +51,7 @@ end
 %% Iterate over omega
 
 all_w = linspace(delta,sqrt(delta),10);
-O = zeros(2*k_tr+1,length(all_w)); i = 1;
+O = zeros(2*k_tr+1,length(all_w)); E = zeros(1,length(all_w)); i = 1;
 % fig = figure();
 % hold on
 c_map = parula(length(all_w)+2);
@@ -82,6 +82,7 @@ for w_op = all_w(2:end)
     % Compute the transmission and reflection coefficients
     [tns,rns] = get_tr(k_tr, w_op, Omega, rs, ks, vr, xm, xp, sol, lij, vin_l, vin_r);
     O(:,i) = abs(tns(:,1)).^2+abs(rns(:,end)).^2;
+    E(i) = get_energy(tns(:,1),rns(:,end),w_op,Omega,v0,xm(1),xp(end),k_tr,t);
     i = i+1;
 
     % Create plot
@@ -94,12 +95,17 @@ xlabel('$n$',Interpreter='latex',FontSize=18)
 ylabel('$|R_n|^2+|T_n|^2$',Interpreter='latex',FontSize=18)
 legend('show',interpreter='latex',fontsize=18)
 
+figure()
+hold on
+plot(all_w(2:end),E(1:end-1),'o','MarkerSize',8,'LineWidth',2)
+xlabel('$\omega$',Interpreter='latex',FontSize=18)
+ylabel('Total Energy',Interpreter='latex',FontSize=18)
 
 %% Iterate over epsilon_kappa
 
 all_epsk = [0.1,0.2,0.3,0.4,0.5,0.6];
-O = zeros(2*k_tr+1,length(all_epsk)); ic = 1;
-% fig = figure();
+O = zeros(2*k_tr+1,length(all_epsk)); E = zeros(1,length(all_epsk)); ic = 1;
+fig = figure();
 % hold on
 c_map = parula(length(all_epsk)+2);
 
@@ -129,7 +135,7 @@ for epsilon_kappa = all_epsk
         w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0); % non-zero subwavelength resonant frequency
     else
         C = make_capacitance_finite(N,lij); % capacitance matrix
-        w_muller = get_capacitance_approx_hot(epsilon_kappa,li,Omega,phase_kappa,delta,C,vr,v0,lij,xm,xp); % subwavelength resonant frequencies
+        w_muller = get_capacitance_approx_hot(epsilon_kappa,li,Omega,phase_kappa,delta,C,vr,v0); % subwavelength resonant frequencies
         w_res = w_muller(real(w_muller)>=0); % positive subwavelength resonant frequencies
     end
     w_op = w_res(1)+0.0002; w0 = w_op;
@@ -155,6 +161,7 @@ for epsilon_kappa = all_epsk
     % Compute the transmission and reflection coefficients
     [tns,rns] = get_tr(k_tr, w_op, Omega, rs, ks, vr, xm, xp, sol, lij, vin_l, vin_r);
     O(:,ic) = abs(tns(:,1)).^2+abs(rns(:,end)).^2;
+    E(ic) = get_energy(tns(:,1),rns(:,end),w_op,Omega,v0,xm(1),xp(end),k_tr,t);
     ic = ic+1;
 
     % Create plot
@@ -166,5 +173,11 @@ end
 xlabel('$n$',Interpreter='latex',FontSize=18)
 ylabel('$|R_n|^2+|T_n|^2$',Interpreter='latex',FontSize=18)
 legend('show',interpreter='latex',fontsize=18)
+
+figure()
+hold on
+plot(all_epsk,E,'o','MarkerSize',8,'LineWidth',2)
+xlabel('$\varepsilon_{\kappa}$',Interpreter='latex',FontSize=18)
+ylabel('Total Energy',Interpreter='latex',FontSize=18)
 
 
