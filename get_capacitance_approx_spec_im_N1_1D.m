@@ -9,7 +9,7 @@ function w_out = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,l,delt
 %   v0:             wave speed outside the resonator
 
     M = 1; % Number of Fourier coefficients of 1/\kappa
-    N_fourier = 4; % Length of Fourier series approx
+    N_fourier = 10; % Length of Fourier series approx
     
     K_mod = [epsilon_kappa/2; 1; epsilon_kappa/2]; % Fourier coefficients of 1/\kappa
 
@@ -27,5 +27,8 @@ function w_out = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,l,delt
     c = 2*delta*(vr)^2/(v0*l);
     mat = -O-1i*c.*iK; 
 
-    w_out = sort(eigs(mat,1,'smallestabs'),'ComparisonMethod','real'); % The eigenvalues of "mat" are approximately \omega + n\Omega for |n| < N_fouier. Taking the smallest eigenvalues corresponds to n = 0.
+    %w_out = eigs(mat,1,'smallestreal'); % The eigenvalues of "mat" are approximately \omega + n\Omega for |n| < N_fouier. Taking the smallest eigenvalues corresponds to n = 0.
+    w_out = eig(mat);
+    [x, I] = min(abs(real(w_out)));
+    w_out = w_out(I);
 end
