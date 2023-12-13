@@ -41,9 +41,9 @@ epsilon_rho = 0; % modulation amplitude of rho
 tol = 1e-10;
 
 % function to iterate with
-p = @(ek) find_imagzero(ek,li,Omega,phase_kappa,delta,vr,v0,lij);
+p = @(ek) find_imagzero(ek,li,Omega,phase_kappa,delta,vr,v0,lij,T);
 
-eks = linspace(0,3,800); p_eks = zeros(1,length(eks)); k = 1;
+eks = linspace(0.1,3,800); p_eks = zeros(1,length(eks)); k = 1;
 for ek = eks
     p_eks(k) = p(ek);
     k = k+1;
@@ -239,7 +239,7 @@ end
 
 %% Functions
 
-function [imag_w_res] = find_imagzero(epsilon_kappa,li,Omega,phase_kappa,delta,vr,v0,lij)
+function [imag_w_res] = find_imagzero(epsilon_kappa,li,Omega,phase_kappa,delta,vr,v0,lij,T)
 % FIND_IMAGZERO function whose root must be found in order to determine setting st imaginary part of resonant frequency is zero
 %   epsilon_kappa:  time-modulation amplitude of kappa
 %   li:             size of resonators
@@ -256,7 +256,8 @@ function [imag_w_res] = find_imagzero(epsilon_kappa,li,Omega,phase_kappa,delta,v
         w_res = get_capacitance_approx_hot(epsilon_kappa,li,Omega,phase_kappa,delta,C,vr,v0); % subwavelength resonant frequencies
 %         w_res = w_res(real(w_res)>=0); % positive subwavelength resonant frequencies
     else
-        w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,li,delta,vr,v0); % non-zero subwavelength resonant frequency
+%         w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,li,delta,vr,v0); % non-zero subwavelength resonant frequency
+        w_res = get_omega_exact(delta,li,v0,vr,Omega,epsilon_kappa,phase_kappa,T);
     end
     imag_w_res = max(abs(imag(w_res))); % imaginary part of the swl resonant frequencies
 
@@ -281,7 +282,8 @@ function [w_res] = omega_epsk(epsilon_kappa,li,Omega,phase_kappa,delta,vr,v0,lij
         [l,i] = sort(imag(w_res)); w_res = w_res(i); % sort omegas according to the real part
 %         w_res = w_res(real(w_res)>=0); % positive subwavelength resonant frequencies
     else
-        w_res = [get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,li,delta,vr,v0),0]; % non-zero subwavelength resonant frequency
+%         w_res = [get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,li,delta,vr,v0),0]; % non-zero subwavelength resonant frequency
+        w_res = get_omega_exact(delta,li,v0,vr,Omega,epsilon_kappa,phase_kappa,T);
     end
     w_res = w_res(idx);
 
