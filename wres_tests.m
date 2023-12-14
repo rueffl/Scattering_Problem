@@ -4,7 +4,7 @@ format long
 
 % Settings for the material's structure
 k_tr = 4; % truncation parameters as in remark 3.3
-N = 2; % number of the resonator
+N = 1; % number of the resonator
 spacing = 10; lij = ones(1,N-1).*spacing; % spacing between the resonators
 len = 2; li = ones(1,N).*len; % length of the resonator
 L = sum(li)+sum(lij); % length of the unit cell
@@ -170,9 +170,17 @@ val_old = all_epsk(1);
         end
     end
 
-    plot(all_epsk,w_epsk,'.k',markersize=8,linewidth=2)
+    plot(all_epsk,w_epsk,'.k',markersize=5,linewidth=5)
     xlabel('$\varepsilon_{\kappa}$','Interpreter','latex','fontsize',18)
     ylabel('$\mathrm{Im}(\omega)$','Interpreter','latex','fontsize',18)
+
+ % plot exact solutions
+    hold on
+%     const = w_epsk(1);
+    const = -2*1i*vr^2*delta/(li*v0);
+    w_epsk_exact = const./sqrt(1-all_epsk.^2);
+    plot(all_epsk,imag(w_epsk_exact),'r',markersize=1,linewidth=1)
+    ylim([w_epsk(end) w_epsk(1)])
 
 % else
 % 
