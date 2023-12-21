@@ -21,7 +21,7 @@ function [us] = get_us(x, t, N, xim, xip, lij, k_tr, v0, w_op, Omega, rs, ks, vr
     us = 0;
     for n = -k_tr:k_tr
         kn = (w_op+n*Omega)/v0;
-        us = us + operator_S(x, N, xim, xip, lij, k_tr, kn, w_op, Omega, rs, ks, vr, sol, n, kin, v_in)*exp(sqrt(-1)*(n*Omega+w_op)*t);
+        us = us + operator_S(x, N, xim, xip, lij, k_tr, kn, w_op, Omega, rs, ks, vr, sol, n, kin, v_in)*exp(sqrt(-1)*(n*Omega-w_op)*t);
     end
 
 end
