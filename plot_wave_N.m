@@ -1,10 +1,10 @@
 %% Set structure setting
-clear 
+% clear 
 format long
 
 % Settings for the material's structure
 k_tr = 4; % truncation parameters as in remark 3.3
-N = 6; % number of the resonator
+N = 2; % number of the resonator
 % L = 2000; % length of the domain \mathcal{U}
 % spacing = L/N; lij = ones(1,N-1).*spacing; % spacing between the resonators
 spacing = 10; lij = ones(1,N-1).*spacing; % spacing between the resonators
@@ -32,7 +32,7 @@ for i = 1:(N-1)
     phase_kappa(i+1) = pi/i;
     phase_rho(i+1) = pi/i;
 end
-epsilon_kappa = 0.2; % modulation amplitude of kappa
+epsilon_kappa = 0.4; % modulation amplitude of kappa
 epsilon_rho = 0; % modulation amplitude of rho
 rs = []; % Fourier coefficients of 1/rho
 ks = []; % Fourier coefficients of 1/kappa
@@ -60,7 +60,7 @@ k0 = w0/v0; % wave number of incident frequency
 uin = @(x,t) 1*exp(sqrt(-1)*((k0).*x+w0.*t)).*(x<xm(1)); % incident wave
 vin = @(x,n) 1*exp(sqrt(-1)*k0*x)*(n==0)*(x<xm(1));
 dx_vin = @(x,n) 1*sqrt(-1)*k0*exp(sqrt(-1)*k0*x)*(n==0)*(x<xm(1));
-G = @(k,x) exp(sqrt(-1)*k*abs(x))./(2*sqrt(-1)*k); % Green's function
+
 
 % Define evaluation points
 len_xs = 800;
@@ -90,8 +90,8 @@ for i = 1:len_xs
 end
 
 % Create plot
-fig = figure();
-fig.Position = [263,725,982,352];
+% fig = figure();
+% fig.Position = [263,725,982,352];
 subplot(1,2,1)
 set(gca,'FontSize',14)
 hold on
@@ -125,17 +125,15 @@ all_epsk = [0,0.1,0.2,0.3,0.4];
 
 % Settings for the material's structure
 k_tr = 4; % truncation parameters as in remark 3.3
-N = 6; % number of the resonator
+N = 1; % number of the resonator
 spacing = 10; lij = ones(1,N-1).*spacing; % spacing between the resonators
 len = 2; li = ones(1,N).*len; % length of the resonator
-L = sum(li)+sum(lij); % length of the unit cell
 Ls = zeros(2*N-1,1);
 Ls(1:2:end) = li;
 Ls(2:2:end) = lij;
 xipm = [0,cumsum(Ls)']-(len*(N/2)+spacing*(N-1)/2); % all boundary points, make sure the resonators are aligned symmetrically wrt 0
 xm = xipm(1:2:end); % LHS boundary points
 xp = xipm(2:2:end); % RHS boundary points
-z = (xm+xp)./2; % centers of resonators
 delta = 0.0001; % small contrast parameter
 t = 0; % time
 
@@ -145,7 +143,7 @@ v0 = 1; % wave speed outside the resonators
 % Define evaluation points
 len_xs = 800;
 len_zs = 80;
-xs = linspace(xm(1),xp(end)+spacing,len_xs);
+xs = linspace(xm(1)-spacing,xp(end)+spacing,len_xs);
 zs = zeros(N,len_zs);
 for i = 1:N
     zs(i,:) = linspace(xm(i),xp(i),len_zs);
@@ -178,14 +176,22 @@ for epsilon_kappa = all_epsk
         rs = [rs; rs_j];
     end
     
-    % Calculate subwavelength resonant frequency
-    C = make_capacitance_finite(N,lij); % capacitance matrix
-    w_muller = get_capacitance_approx_hot(epsilon_kappa,li,Omega,phase_kappa,delta,C,vr,v0); % subwavelength resonant frequencies
-    w_res = w_muller(real(w_muller)>=0); % positive subwavelength resonant frequencies
-    w_op = w_res(1)+ 0.0002; % operating frequency
+   % Calculate subwavelength resonant frequency
+    if N > 1
+        w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0)*ones(1,N);
+        w_op = w_res(1)+ 0.0002; % operating frequency
+    else
+        w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0); % non-zero subwavelength resonant frequency
+        w_op = w_res+0.0002; % operating frequency
+    end
     w0 = w_op;%real(w_res(1))+0.02; % quasifrequency of incident wave
     k_op = w_op/v0; % operating wave number outside of the resonator
     k0 = w0/v0; % wave number of incident frequency
+
+    % Define relevant functions
+    uin = @(x,t) 1*exp(sqrt(-1)*((k0).*x+w0.*t)).*(x<xm(1)); % incident wave
+    vin = @(x,n) 1*exp(sqrt(-1)*k0*x)*(n==0)*(x<xm(1));
+    dx_vin = @(x,n) 1*sqrt(-1)*k0*exp(sqrt(-1)*k0*x)*(n==0)*(x<xm(1));
 
     % Compute solution coefficients
     MatcalA = getMatcalA(N,lij,xm,xp,k_tr,w_op,Omega,rs,ks,vr,delta,v0); % matrix \mathcal{A}
@@ -193,6 +199,7 @@ for epsilon_kappa = all_epsk
     N_vin = getN_vin(k_tr, N, delta, xm, xp, w_op, Omega, v0, lij, vin, @(x,n) 0); % matrix-vector product \mathcal{N}v^{in}
     RHS = MatcalF + N_vin;
     sol = MatcalA\RHS; % solve for the interior coefficients, vector \mathbf{w}
+
     
     us_eval_x = zeros(1,len_xs);
     us_eval_z = zeros(1,len_zs);
@@ -281,7 +288,7 @@ for i = 1:(N-1)
     phase_kappa(i+1) = pi/i;
     phase_rho(i+1) = pi/i;
 end
-epsilon_kappa = 0.4;
+epsilon_kappa = 0;
 epsilon_rho = 0;
 rs = []; % Fourier coefficients of 1/rho
 ks = []; % Fourier coefficients of 1/kappa
@@ -309,7 +316,7 @@ for t = ts
     k0 = w0/v0; % wave number of incident frequency
 
     % Define relevant functions
-    uin = @(x,t) 1*exp(sqrt(-1)*((k0).*x+w0.*t)).*(x<xm(1)); % incident wave
+    uin = @(x,t) 1*exp(sqrt(-1)*((k0).*x-w0.*t)).*(x<xm(1)); % incident wave
     vin = @(x,n) 1*exp(sqrt(-1)*k0*x)*(n==0)*(x<xm(1));
     dx_vin = @(x,n) 1*sqrt(-1)*k0*exp(sqrt(-1)*k0*x)*(n==0)*(x<xm(1));
 
@@ -380,7 +387,7 @@ xm = xipm(1:2:end); % LHS boundary points
 xp = xipm(2:2:end); % RHS boundary points
 
 xs = linspace(xm(1),xp(end),200);
-ts = linspace(0,220,200);
+ts = linspace(0,T,200);
 uxt = zeros(200,200);
 
 for it = 1:200
@@ -399,10 +406,12 @@ zlabel('$\mathrm{Re}(u(x,t))$',interpreter='latex')
 s = surf(ts,xs,imag(uxt),'EdgeColor','interp');
 s.EdgeColor = 'none';
 c = colorbar;
-c.Label.String = '$\mathrm{Im}(u(x,t))$';
+c.Label.String = '$\mathrm{Re}(u(x,t))$';
 xlabel('$t$',interpreter='latex')
 ylabel('$x$',interpreter='latex')
-zlabel('$\mathrm{Im}(u(x,t))$',interpreter='latex')
+zlabel('$\mathrm{Re}(u(x,t))$',interpreter='latex')
+ylim([xs(1),xs(end)])
+xlim([ts(1),ts(end)])
 
 
 %% function for 3D plot
