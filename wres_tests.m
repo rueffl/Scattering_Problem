@@ -4,7 +4,7 @@ format long
 
 % Settings for the material's structure
 k_tr = 4; % truncation parameters as in remark 3.3
-N = 1; % number of the resonator
+N = 6; % number of the resonator
 spacing = 10; lij = ones(1,N-1).*spacing; % spacing between the resonators
 len = 2; li = ones(1,N).*len; % length of the resonator
 L = sum(li)+sum(lij); % length of the unit cell
@@ -91,22 +91,26 @@ sol = MatcalA\RHS; % solve for the interior coefficients, vector \mathbf{w}
 % Calculate energy
 [tns,rns] = get_tr(k_tr, w_op, Omega, rs, ks, vr, xm, xp, sol, lij, vin_l, vin_r);
 O = abs(tns(:,1)).^2+abs(rns(:,end)).^2;
-semilogy(-k_tr:k_tr,O,'*g','DisplayName',strcat('$\varepsilon_{\kappa}=\,\,$',num2str(epsilon_kappa)),'MarkerSize',8,'LineWidth',2)
+% semilogy(-k_tr:k_tr,O,'*g','DisplayName',strcat('$\varepsilon_{\kappa}=\,\,$',num2str(epsilon_kappa)),'MarkerSize',8,'LineWidth',2)
 
 %% Determine regions
 
-w_res = @(epsilon_kappa) imag(omega_epsk(epsilon_kappa,li,Omega,phase_kappa,delta,vr,v0,lij));
-all_epsk = linspace(0,1.0,400);
+w_res = @(epsilon_kappa) imag(omega_epsk(epsilon_kappa,li,Omega,phase_kappa,delta,vr,v0,lij,idx));
+all_epsk = linspace(0,0.99,400);
 w_epsk = zeros(1,length(all_epsk));
 
 % prepare plot
-fig = figure();
-hold on
+% fig = figure();
+% hold on
+subplot(1,3,3)
 
-change_idx = [];
-change_val = [];
-val_old = all_epsk(1);
-% if N == 1
+for idx = 1:2*N
+
+    change_idx = [];
+    change_val = [];
+    val_old = all_epsk(1);
+
+    w_res = @(epsilon_kappa) imag(omega_epsk(epsilon_kappa,li,Omega,phase_kappa,delta,vr,v0,lij,idx));
 
     for i = 1:length(all_epsk)
         w_epsk(i) = w_res(all_epsk(i));
@@ -119,141 +123,18 @@ val_old = all_epsk(1);
         change_val = all_epsk(change_idx);
     end
 
-    if change_idx
-        for i = 1:length(change_val)
-            val = change_val(i);
-            inBetweenx = [val_old.*ones(1,100),fliplr(val.*ones(1,100))];
-            inBetweeny = [linspace(min(w_epsk)-0.005,max(w_epsk)+0.005,100),fliplr(linspace(min(w_epsk)-0.005,max(w_epsk)+0.005,100))];
-            if w_epsk(change_idx(i)-1) < w_epsk(change_idx(i)) 
-                str = '#f3846c'; % red
-                color = sscanf(str(2:end),'%2x%2x%2x',[1 3])/255;
-                fill(inBetweenx,inBetweeny,color,'FaceAlpha',0.3,'LineStyle','none')
-            else
-                str = '#74ea91'; % green
-                color = sscanf(str(2:end),'%2x%2x%2x',[1 3])/255;
-                fill(inBetweenx,inBetweeny,color,'FaceAlpha',0.3,'LineStyle','none')
-            end
-            if abs(w_epsk(change_idx(i)-1) - w_epsk(change_idx(i))) < 10^(-4)
-                str = '#f98204'; % orange
-                color = sscanf(str(2:end),'%2x%2x%2x',[1 3])/255;
-                plot(val.*ones(1,100),linspace(min(w_epsk)-0.005,max(w_epsk)+0.005,100),'--','Color',color,markersize=8,linewidth=2)
-            end
-            val_old = val;
-        end
-        inBetweenx = [val_old.*ones(1,100),fliplr(all_epsk(end).*ones(1,100))];
-        inBetweeny = [linspace(min(w_epsk)-0.005,max(w_epsk)+0.005,100),fliplr(linspace(min(w_epsk)-0.005,max(w_epsk)+0.005,100))];
-        if w_epsk(change_idx(i)-1) < w_epsk(change_idx(i)) 
-            str = '#f3846c'; % red
-            color = sscanf(str(2:end),'%2x%2x%2x',[1 3])/255;
-            fill(inBetweenx,inBetweeny,color,'FaceAlpha',0.3,'LineStyle','none')
-        else
-            str = '#74ea91'; % green
-            color = sscanf(str(2:end),'%2x%2x%2x',[1 3])/255;
-            fill(inBetweenx,inBetweeny,color,'FaceAlpha',0.3,'LineStyle','none')
-        end
-        if abs(w_epsk(change_idx(i)-1) - w_epsk(change_idx(i))) < 10^(-4)
-            str = '#f98204'; % orange
-            color = sscanf(str(2:end),'%2x%2x%2x',[1 3])/255;
-            plot(val.*ones(1,100),linspace(min(w_epsk)-0.005,max(w_epsk)+0.005,100),'--','Color',color,markersize=8,linewidth=2)
-        end
-    else
-        inBetweenx = [zeros(1,100),fliplr(all_epsk(end).*ones(1,100))];
-        inBetweeny = [linspace(min(w_epsk)-0.005,max(w_epsk)+0.005,100),fliplr(linspace(min(w_epsk)-0.005,max(w_epsk)+0.005,100))];
-        if w_epsk(1) < 0
-            str = '#f3846c'; % red
-            color = sscanf(str(2:end),'%2x%2x%2x',[1 3])/255;
-            fill(inBetweenx,inBetweeny,color,'FaceAlpha',0.3,'LineStyle','none')
-        else
-            str = '#74ea91'; % green
-            color = sscanf(str(2:end),'%2x%2x%2x',[1 3])/255;
-            fill(inBetweenx,inBetweeny,color,'FaceAlpha',0.3,'LineStyle','none')
-        end
-    end
-
-    plot(all_epsk,w_epsk,'.k',markersize=5,linewidth=5)
+    plot(all_epsk,w_epsk,'-k',markersize=5,linewidth=2)
+    hold on
     xlabel('$\varepsilon_{\kappa}$','Interpreter','latex','fontsize',18)
     ylabel('$\mathrm{Im}(\omega)$','Interpreter','latex','fontsize',18)
 
- % plot exact solutions
-    hold on
-%     const = w_epsk(1);
-    const = -2*1i*vr^2*delta/(li*v0);
-    w_epsk_exact = const./sqrt(1-all_epsk.^2);
-    plot(all_epsk,imag(w_epsk_exact),'r',markersize=1,linewidth=1)
-    ylim([w_epsk(end) w_epsk(1)])
+end
 
-% else
-% 
-%     for idx = 1:2*N
-% 
-%         val_old = 0;
-%         subplot(2,N,idx)
-%         hold on
-% 
-%         change_idx = []; change_val = [];
-% 
-%         for i = 1:length(all_epsk)
-%             w_epsk(idx,i) = w_res(all_epsk(i));
-%             % find change of sign
-%             if i > 1
-%                 if w_epsk(idx,i)*w_epsk(idx,i-1) < 0
-%                     change_idx = [change_idx,i];
-%                     change_val = [change_val,all_epsk(i)];
-%                 end
-%             end
-%         end
-% 
-%         for i = 1:length(change_val)
-%             val = change_val(i);
-%             inBetweenx = [val_old.*ones(1,100),fliplr(val.*ones(1,100))];
-%             inBetweeny = [linspace(min(w_epsk(idx,:))-0.005,max(w_epsk(idx,:))+0.005,100),fliplr(linspace(min(w_epsk(idx,:))-0.005,max(w_epsk(idx,:))+0.005,100))];
-%             if w_epsk(idx,change_idx(i)-1) < w_epsk(idx,change_idx(i)) 
-%                 str = '#f3846c'; % red
-%                 color = sscanf(str(2:end),'%2x%2x%2x',[1 3])/255;
-%                 fill(inBetweenx,inBetweeny,color,'FaceAlpha',0.3,'LineStyle','none')
-%             else
-%                 str = '#74ea91'; % green
-%                 color = sscanf(str(2:end),'%2x%2x%2x',[1 3])/255;
-%                 fill(inBetweenx,inBetweeny,color,'FaceAlpha',0.3,'LineStyle','none')
-%             end
-%             if abs(w_epsk(idx,change_idx(i)-1) - w_epsk(idx,change_idx(i))) < 10^(-4)
-%                 str = '#f98204'; % orange
-%                 color = sscanf(str(2:end),'%2x%2x%2x',[1 3])/255;
-%                 plot(val.*ones(1,100),linspace(min(w_epsk(idx,:))-0.005,max(w_epsk(idx,:))+0.005,100),'--','Color',color,markersize=8,linewidth=2)
-%             end
-%             val_old = val;
-%         end
-%         inBetweenx = [val_old.*ones(1,100),fliplr(all_epsk(end).*ones(1,100))];
-%         inBetweeny = [linspace(min(w_epsk(idx,:))-0.005,max(w_epsk(idx,:))+0.005,100),fliplr(linspace(min(w_epsk(idx,:))-0.005,max(w_epsk(idx,:))+0.005,100))];
-%         if w_epsk(change_idx(i)+5) < 0
-%             str = '#f3846c'; % red
-%             color = sscanf(str(2:end),'%2x%2x%2x',[1 3])/255;
-%             fill(inBetweenx,inBetweeny,color,'FaceAlpha',0.3,'LineStyle','none')
-%         else
-%             str = '#74ea91'; % green
-%             color = sscanf(str(2:end),'%2x%2x%2x',[1 3])/255;
-%             fill(inBetweenx,inBetweeny,color,'FaceAlpha',0.3,'LineStyle','none')
-%         end
-%     
-%         if abs(w_epsk(idx,change_idx(i)-1) - w_epsk(idx,change_idx(i))) < 10^(-4)
-%             str = '#f98204'; % orange
-%             color = sscanf(str(2:end),'%2x%2x%2x',[1 3])/255;
-%             plot(val.*ones(1,100),linspace(min(w_epsk(idx,:))-0.005,max(w_epsk(idx,:))+0.005,100),'--','Color',color,markersize=8,linewidth=2)
-%         end
-%         plot(all_epsk,w_epsk(idx,:),'.k',markersize=8,linewidth=2)
-%         xlabel('$\varepsilon_{\kappa}$','Interpreter','latex','fontsize',18)
-%         ylabel('$\mathrm{Im}(\omega)$','Interpreter','latex','fontsize',18)
-%         
-% %         for k = 1:2*N
-% %             plot(all_epsk,w_epsk(k,:),'.k',markersize=8,linewidth=2)
-% %         end
-% 
-%     end
-% 
-% end
-
-% To do: plot it for N>1, take maximum value of the imaginary part of swl
-% resonant frequencies
+%     % plot exact solutions
+%     hold on
+%     const = -2*1i*vr^2*delta/(li*v0);
+%     w_epsk_exact = const./sqrt(1-all_epsk.^2);
+%     plot(all_epsk,imag(w_epsk_exact),'r--',markersize=1,linewidth=2)
 
 
 
@@ -283,7 +164,7 @@ function [imag_w_res] = find_imagzero(epsilon_kappa,li,Omega,phase_kappa,delta,v
 
 end
 
-function [w_res] = omega_epsk(epsilon_kappa,li,Omega,phase_kappa,delta,vr,v0,lij)
+function [w_res] = omega_epsk(epsilon_kappa,li,Omega,phase_kappa,delta,vr,v0,lij,idx)
 % FIND_IMAGZERO function whose root must be found in order to determine setting st imaginary part of resonant frequency is zero
 %   epsilon_kappa:  time-modulation amplitude of kappa
 %   li:             size of resonators
@@ -300,11 +181,10 @@ function [w_res] = omega_epsk(epsilon_kappa,li,Omega,phase_kappa,delta,vr,v0,lij
         w_res = get_capacitance_approx_hot(epsilon_kappa,li,Omega,phase_kappa,delta,C,vr,v0); % subwavelength resonant frequencies
         [val,i] = sort(imag(w_res)); w_res = w_res(i); % sort omegas according to the real part
         [val,i] = max(imag(w_res));
-        w_res = w_res(i);
     else
         w_res = [get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,li,delta,vr,v0),0]; % non-zero subwavelength resonant frequency
-        w_res = w_res(1);
     end
+    w_res = w_res(idx);
 
 end
 
