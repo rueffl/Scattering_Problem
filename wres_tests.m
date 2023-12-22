@@ -101,7 +101,8 @@ w_epsk = zeros(1,length(all_epsk));
 
 % prepare plot
 % fig = figure();
-% hold on
+figure(1)
+hold on
 subplot(1,3,3)
 
 for idx = 1:2*N
