@@ -38,7 +38,7 @@ function out = make_invM2(t,delta,vr,v0,li,epsilon_kappa,phase_kappa,Omega)
     Kt = diag(kappa(t));
     Z = zeros(N,N);
     Id = eye(N);
-    m2 = [Id, Z; -D./v0, -L*Kt./(delta*vr^2)]; % matrix M_2
+    m2 = [Id, Z; D./v0, -L*Kt./(delta*vr^2)]; % matrix M_2
     out = inv(m2); % matrix M_2^{-1}
 
 end
