@@ -1,4 +1,4 @@
-function [tot_en] = get_energy(tns,rns,w_op,Omega,v0,xm,xp,k_tr,t)
+function [tot_en] = get_energy(tns,rns,k_tr)
 %GET_ENERGY Computes the energy of a system using the transmission and reflection coefficient of each mode
 %   tns:    transmission coefficient of each mode
 %   rns:    reflection coefficients of each mode
@@ -8,7 +8,6 @@ function [tot_en] = get_energy(tns,rns,w_op,Omega,v0,xm,xp,k_tr,t)
 %   xm:     left boundary of the first resonator
 %   xp:     right boundary of the last resonator
 %   k_tr:   truncation parameter
-%   t:      time
 
 %     r_sum = 0; t_sum = 0;
 %     w_i = imag(w_op);
