@@ -3,7 +3,7 @@ format long
 
 % Settings for the material's structure
 k_tr = 4; % truncation parameters as in remark 3.3
-N = 4; % number of the resonator
+N = 6; % number of the resonator
 spacing = 10; lij = ones(1,N-1).*spacing; % spacing between the resonators
 len = 2; li = ones(1,N).*len; % length of the resonator
 L = sum(li)+sum(lij); % length of the unit cell
@@ -28,7 +28,7 @@ for i = 1:(N-1)
     phase_kappa(i+1) = pi/i;
     phase_rho(i+1) = pi/i;
 end
-epsilon_kappa = 0.3; % modulation amplitude of kappa
+epsilon_kappa = 0.6; % modulation amplitude of kappa
 epsilon_rho = 0; % modulation amplitude of rho
 rs = []; % Fourier coefficients of 1/rho
 ks = []; % Fourier coefficients of 1/kappa
@@ -91,7 +91,7 @@ end
 % ylabel('$|R_n|^2+|T_n|^2$',Interpreter='latex',FontSize=18)
 % legend('show',interpreter='latex',fontsize=18)
 
-figure(2)
+figure(1)
 subplot(1,3,1)
 hold on
 plot(all_w,E(1:end),'-k','MarkerSize',8,'LineWidth',2)
@@ -100,7 +100,7 @@ for w = w_res
 end
 ylim([min(E(1:end))-0.000005,max(E(1:end))+0.000005])
 xlabel('$\omega$',Interpreter='latex',FontSize=18)
-ylabel('Total Energy',Interpreter='latex',FontSize=18)
+ylabel('$E$',Interpreter='latex',FontSize=18)
 
 %% Iterate over epsilon_kappa
 
@@ -240,12 +240,12 @@ ylabel('$\varepsilon_{\kappa}$',interpreter='latex')
 zlabel('$E$',interpreter='latex')
 
 
-%% Test energy conservation over time
+%% Iterate over epsilon_kappa, make continuous plot
 
-all_epsk = linspace(0,0.9,100);
+all_epsk = linspace(0,0.99,100);
 E = zeros(length(all_epsk),1); it = 1; ik = 1;
 figure(1)
-subplot(1,3,1)
+subplot(1,3,3)
 hold on
 c_map = parula(5);
 
@@ -306,9 +306,9 @@ end
 
 % Plot results
 plot(all_epsk,E,'-k','DisplayName',strcat('$N=\,\,$',num2str(N)),'MarkerSize',8,'LineWidth',2)
-plot(linspace(0,0.9,50),ones(1,50),'--','Color',[.5 .5 .5],'HandleVisibility','off','MarkerSize',8,'LineWidth',2)
+plot(linspace(0,0.99,50),ones(1,50),'--','Color',[.5 .5 .5],'HandleVisibility','off','MarkerSize',8,'LineWidth',2)
 xlabel('$\varepsilon_{\kappa}$',Interpreter='latex',FontSize=18)
-ylabel('Total Energy',Interpreter='latex',FontSize=18)
+ylabel('$E$',Interpreter='latex',FontSize=18)
 legend('show',interpreter='latex',fontsize=18)
 
 
