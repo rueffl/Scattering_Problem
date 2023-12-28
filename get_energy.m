@@ -18,7 +18,7 @@ function [tot_en] = get_energy(tns,rns,k_tr)
 %     tot_en = abs(exp(w_i*t)).^2.*(abs(exp(w_i*xm/v0)).^2.*abs(r_sum).^2+abs(exp(w_i*xp/v0)).^2.*abs(t_sum).^2);
 
     tot_en = 0;
-    for n = -k_tr+k_tr
+    for n = -k_tr:k_tr
         tot_en = tot_en + abs(rns(n+k_tr+1)).^2 + abs(tns(n+k_tr+1)).^2;
     end
 
