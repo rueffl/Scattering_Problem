@@ -47,7 +47,7 @@ function w_out = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,del
         ik = inv(k);
         iK(Ii,Ii) = ik; %% Fourier coefficients of \kappa
         if (i == 1) || (i == N)
-            KD(Ii,Ii) = d*delta*vr^2/(v0*li)*ik;
+            KD(Ii,Ii) = d*delta*vr^2/(v0*li(i))*ik;
         end
     end
 
