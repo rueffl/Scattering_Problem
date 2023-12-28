@@ -45,18 +45,13 @@ end
 
 % Calculate subwavelength resonant frequency
 if N > 1
-%     w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0)*ones(1,N);
-    C = make_capacitance_finite(N,lij);
-    w_res = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,C,k_tr);
-    w_op = w_res(1)+ 0.0002; % operating frequency
-    w0 = w_op; %w0 = real(w_res(1))+0.02; % quasifrequency of incident wave
+    C = make_capacitance_finite(N,lij); % capacitance matrix
+    w_muller = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,C,k_tr); % subwavelength resonant frequencies
 else
-%     w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0); % non-zero subwavelength resonant frequency
-    C = 0;
-    w_res = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,C,k_tr);
-    w_op = w_res+0.0002; % operating frequency
-    w0 = w_op; % quasifrequency of incident wave
+    w_muller = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0);
 end
+w_res = w_muller(real(w_muller)>=0); % positive subwavelength resonant frequencies
+w_op = w_res(1)+0.0002; w0 = w_op;
 k_op = w_op/v0; % operating wave number outside of the resonator
 k0 = w0/v0; % wave number of incident frequency
 
@@ -84,6 +79,7 @@ MatcalF = getF_lr(k_tr, N, delta, xm, xp, dx_vin, @(x,n) 0); % vector \mathcal{F
 N_vin = getN_vin(k_tr, N, delta, xm, xp, w_op, Omega, v0, lij, vin, @(x,n) 0); % matrix-vector product \mathcal{N}v^{in}
 RHS = MatcalF + N_vin;
 sol = MatcalA\RHS; % solve for the interior coefficients, vector \mathbf{w}
+
 
 us_eval_x = zeros(1,len_xs);
 us_eval_z = zeros(1,len_zs);
@@ -125,7 +121,7 @@ end
 
 %% Iterate over epsilon and create plot
 
-all_epsk = [0,0.1,0.2,0.3,0.4];
+all_epsk = [0,0.2,0.4,0.6,0.8];
 
 % Settings for the material's structure
 k_tr = 4; % truncation parameters as in remark 3.3
@@ -180,19 +176,16 @@ for epsilon_kappa = all_epsk
         rs = [rs; rs_j];
     end
     
-   % Calculate subwavelength resonant frequency
+    % Calculate subwavelength resonant frequency
     if N > 1
-%         w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0)*ones(1,N);
-        C = make_capacitance_finite(N,lij);
-        w_res = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,C,k_tr);
-        w_res = w_res(2)*ones(1,N);
-        w_op = w_res(1)+ 0.0002; % operating frequency
+        C = make_capacitance_finite(N,lij); % capacitance matrix
+        w_muller = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,C,k_tr); % subwavelength resonant frequencies
     else
-%         w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0); % non-zero subwavelength resonant frequency
-        C = 0;
-        w_res = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,C,k_tr);
-        w_op = w_res(2)+0.0002; % operating frequency
+        w_muller = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0);
     end
+    w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len(1),delta,vr,v0);
+%     w_res = w_muller(real(w_muller)>=0); % positive subwavelength resonant frequencies
+    w_op = w_res(1)+ 0.0002; % operating frequency
     w0 = w_op;%real(w_res(1))+0.02; % quasifrequency of incident wave
     k_op = w_op/v0; % operating wave number outside of the resonator
     k0 = w0/v0; % wave number of incident frequency
@@ -208,7 +201,6 @@ for epsilon_kappa = all_epsk
     N_vin = getN_vin(k_tr, N, delta, xm, xp, w_op, Omega, v0, lij, vin, @(x,n) 0); % matrix-vector product \mathcal{N}v^{in}
     RHS = MatcalF + N_vin;
     sol = MatcalA\RHS; % solve for the interior coefficients, vector \mathbf{w}
-
     
     us_eval_x = zeros(1,len_xs);
     us_eval_z = zeros(1,len_zs);
@@ -297,7 +289,7 @@ for i = 1:(N-1)
     phase_kappa(i+1) = pi/i;
     phase_rho(i+1) = pi/i;
 end
-epsilon_kappa = 0;
+epsilon_kappa = 0.4;
 epsilon_rho = 0;
 rs = []; % Fourier coefficients of 1/rho
 ks = []; % Fourier coefficients of 1/kappa
@@ -309,17 +301,21 @@ for j = 1:N
 end
 
 % prepare figure
-fig = figure();
-fig.Position = [2226, 623, 1219, 345];
+% fig = figure();
+% fig.Position = [2226, 623, 1219, 345];
 c_map = parula(length(ts)+2); ic = 1;
 
 for t = ts
     
     % Calculate subwavelength resonant frequency
-    C = make_capacitance_finite(N,lij); % capacitance matrix
-%     w_muller = get_capacitance_approx_hot(epsilon_kappa,li,Omega,phase_kappa,delta,C,vr,v0); % subwavelength resonant frequencies
-    w_muller = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,C,k_tr);
+    if N > 1
+        C = make_capacitance_finite(N,lij); % capacitance matrix
+        w_muller = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,C,k_tr); % subwavelength resonant frequencies
+    else
+        w_muller = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0);
+    end
     w_res = w_muller(real(w_muller)>=0); % positive subwavelength resonant frequencies
+    w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len(1),delta,vr,v0);
     w_op = w_res(1)+ 0.0002; % operating frequency
     w0 = w_op;%real(w_res(1))+0.02; % quasifrequency of incident wave
     k_op = w_op/v0; % operating wave number outside of the resonator
@@ -465,7 +461,6 @@ function uxt = total_u_xt(xi,ti)
         
     % Calculate subwavelength resonant frequency
     C = make_capacitance_finite(N,lij); % capacitance matrix
-%     w_muller = get_capacitance_approx_hot(epsilon_kappa, li, Omega, phase_kappa, delta, C, vr, v0); 
     w_muller = get_capacitance_approx_spec(epsilon_kappa, phase_kappa, Omega, delta, li, v0, vr, C, k_tr); % subwavelength resonant frequencies
     w_res = w_muller(real(w_muller)>=0); % positive subwavelength resonant frequencies
     w_op = w_res(1)+ 0.0002; % operating frequency
