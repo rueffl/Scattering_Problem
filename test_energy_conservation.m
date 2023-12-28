@@ -3,7 +3,7 @@ format long
 
 % Settings for the material's structure
 k_tr = 4; % truncation parameters as in remark 3.3
-N = 6; % number of the resonator
+N = 1; % number of the resonator
 spacing = 10; lij = ones(1,N-1).*spacing; % spacing between the resonators
 len = 2; li = ones(1,N).*len; % length of the resonator
 L = sum(li)+sum(lij); % length of the unit cell
@@ -41,10 +41,13 @@ end
 
 % Calculate subwavelength resonant frequency
 if N == 1
-    w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0); % non-zero subwavelength resonant frequency
+%     w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0); % non-zero subwavelength resonant frequency
+    w_muller = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,0,k_tr);
+    w_res = w_muller(2);
 else
     C = make_capacitance_finite(N,lij); % capacitance matrix
-    w_muller = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,len,v0,vr,C,k_tr); % subwavelength resonant frequencies
+%     w_muller = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,len,v0,vr,C,k_tr); % subwavelength resonant frequencies
+    w_muller = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,C,k_tr);
     w_res = w_muller(real(w_muller)>=0); % positive subwavelength resonant frequencies
 end
 
@@ -92,7 +95,7 @@ end
 % legend('show',interpreter='latex',fontsize=18)
 
 figure(1)
-subplot(1,3,1)
+subplot(1,3,3)
 hold on
 plot(all_w,E(1:end),'-k','MarkerSize',8,'LineWidth',2)
 for w = w_res
@@ -104,9 +107,9 @@ ylabel('$E$',Interpreter='latex',FontSize=18)
 
 %% Iterate over epsilon_kappa
 
-all_epsk = linspace(0,0.99,11);
+all_epsk = linspace(0,0.6,7);
 O = zeros(2*k_tr+1,length(all_epsk)); E = zeros(1,length(all_epsk)); ic = 1;
-fig = figure();
+fig = figure(2);
 % hold on
 c_map = parula(length(all_epsk)+2);
 
@@ -133,10 +136,13 @@ for epsilon_kappa = all_epsk
     
     % Calculate subwavelength resonant frequency
     if N == 1
-        w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0); % non-zero subwavelength resonant frequency
+    %     w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0); % non-zero subwavelength resonant frequency
+        w_muller = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,0,k_tr);
+        w_res = w_muller(2);
     else
         C = make_capacitance_finite(N,lij); % capacitance matrix
-        w_muller = get_capacitance_approx_hot(epsilon_kappa,li,Omega,phase_kappa,delta,C,vr,v0); % subwavelength resonant frequencies
+    %     w_muller = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,len,v0,vr,C,k_tr); % subwavelength resonant frequencies
+        w_muller = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,C,k_tr);
         w_res = w_muller(real(w_muller)>=0); % positive subwavelength resonant frequencies
     end
     w_op = w_res(1)+0.0002; w0 = w_op;
@@ -242,12 +248,31 @@ zlabel('$E$',interpreter='latex')
 
 %% Iterate over epsilon_kappa, make continuous plot
 
-all_epsk = linspace(0,0.99,100);
+all_epsk = linspace(0,0.95,100);
 E = zeros(length(all_epsk),1); it = 1; ik = 1;
-figure(1)
-subplot(1,3,3)
+figure(3)
+% subplot(1,3,3)
 hold on
 c_map = parula(5);
+
+% Settings for the material's structure
+k_tr = 4; % truncation parameters as in remark 3.3
+N = 6; % number of the resonator
+spacing = 10; lij = ones(1,N-1).*spacing; % spacing between the resonators
+len = 2; li = ones(1,N).*len; % length of the resonator
+L = sum(li)+sum(lij); % length of the unit cell
+Ls = zeros(2*N-1,1);
+Ls(1:2:end) = li;
+Ls(2:2:end) = lij;
+xipm = [0,cumsum(Ls)']-(len*(N/2)+spacing*(N-1)/2); % all boundary points, make sure the resonators are aligned symmetrically wrt 0
+xm = xipm(1:2:end); % LHS boundary points
+xp = xipm(2:2:end); % RHS boundary points
+delta = 0.0001; % small contrast parameter
+t = 0; % time
+
+vr = 1; % wave speed inside the resonators
+v0 = 1; % wave speed outside the resonators
+
 
 for epsilon_kappa = all_epsk
     
@@ -272,10 +297,13 @@ for epsilon_kappa = all_epsk
     
     % Calculate subwavelength resonant frequency
     if N == 1
-        w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0); % non-zero subwavelength resonant frequency
+    %     w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0); % non-zero subwavelength resonant frequency
+        w_muller = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,0,k_tr);
+        w_res = w_muller(2);
     else
         C = make_capacitance_finite(N,lij); % capacitance matrix
-        w_muller = get_capacitance_approx_hot(epsilon_kappa,li,Omega,phase_kappa,delta,C,vr,v0); % subwavelength resonant frequencies
+    %     w_muller = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,len,v0,vr,C,k_tr); % subwavelength resonant frequencies
+        w_muller = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,C,k_tr);
         w_res = w_muller(real(w_muller)>=0); % positive subwavelength resonant frequencies
     end
     w_op = real(w_res(1)+0.02); w0 = w_op;
@@ -305,7 +333,7 @@ for epsilon_kappa = all_epsk
 end
 
 % Plot results
-plot(all_epsk,E,'-k','DisplayName',strcat('$N=\,\,$',num2str(N)),'MarkerSize',8,'LineWidth',2)
+plot(all_epsk,E,'-','Color',c_map(3,:),'DisplayName',strcat('$N=\,\,$',num2str(N)),'MarkerSize',8,'LineWidth',2)
 plot(linspace(0,0.99,50),ones(1,50),'--','Color',[.5 .5 .5],'HandleVisibility','off','MarkerSize',8,'LineWidth',2)
 xlabel('$\varepsilon_{\kappa}$',Interpreter='latex',FontSize=18)
 ylabel('$E$',Interpreter='latex',FontSize=18)
