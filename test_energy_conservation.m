@@ -44,7 +44,7 @@ if N == 1
     w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0); % non-zero subwavelength resonant frequency
 else
     C = make_capacitance_finite(N,lij); % capacitance matrix
-    w_muller = get_capacitance_approx_hot(epsilon_kappa,li,Omega,phase_kappa,delta,C,vr,v0); % subwavelength resonant frequencies
+    w_muller = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,len,v0,vr,C,k_tr); % subwavelength resonant frequencies
     w_res = w_muller(real(w_muller)>=0); % positive subwavelength resonant frequencies
 end
 

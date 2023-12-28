@@ -25,7 +25,7 @@ function MatcalA = getMatcalA(N,lij,xm,xp,k_tr,w,Omega,rs,ks,vr,delta,v0)
         list_lambdas(:,i) = lambdas;
     end
     
-    for n = -k_tr:k_tr
+    for n = k_tr:(-1):-k_tr
         An = [];
 %  define Dirchlet Neumann map
         kn = (w+n*Omega)/v0;

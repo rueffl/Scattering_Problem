@@ -1,20 +1,27 @@
 %% Numerically compute the Floquet exponents of the NxN system of Capacitance ODEs
-%  GCM\Psi + d/dt 1/\kappa d/dt \Psi = 0. 1/kappa has a finite Fourier series of length 2
+%  GCM\Psi + D d/dt \Psi + d/dt 1/\kappa d/dt \Psi = 0. 1/kappa has a
+%  finite Fourier series of length 1
 %
 % Rewrite to the system of 1st order ODEs
 % dt/dt \psi_1 = \kappa*psi_2
-% dt/dt \psi_2 = -GCM*psi_1 
+% dt/dt \psi_2 = -GCM*psi_1 - D/\kappa*psi_2
 % Then solve spectrally: d/dt = 1i(\omega + n\Omega) which gives the
 % eigenvalue problem
 % \omega \psi_1 = - n\Omega \psi_1 - 1i*\kappa*\psi_2
-% \omega \psi_2 = - n\Omega \psi_2 - 1i*GCM*\psi_1
+% \omega \psi_2 = - n\Omega \psi_2 - 1i*GCM*\psi_1 - 1i*D*\kappa*psi_2
 % 
 
-function w_out = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,C,k_tr)
-    GCM = delta*diag(1./li)*C;
+function w_out = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,C,k_tr)
+    GCM = delta*vr^2*diag(1./li)*C;
 
     M = 1; % Number of Fourier coefficients of 1/\kappa
     N = size(GCM,1);
+    if N==1
+        d = 2;
+    else 
+        d = 1;
+    end
+    
     N_fourier = k_tr; % Length of Fourier series approx
     
     K_mod = zeros(2*M+1,N);
@@ -30,18 +37,23 @@ function w_out = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,del
     INN = eye(NN);
     IN = eye(N);
     iK = zeros(NN*N);
+    KD = zeros(NN*N);
     for i = 1:N
-        K = zeros(NN,NN);
+        k = zeros(NN,NN);
         for m = -M:M
-            K = K+diag(e(1:NN-abs(m))*K_mod(m+M+1,i),m);
+            k = k+diag(e(1:NN-abs(m))*K_mod(m+M+1,i),m);
         end
         Ii = (i-1)*NN+1:i*NN;
-        iK(Ii,Ii) = inv(K); %% Fourier coefficients of \kappa
+        ik = inv(k);
+        iK(Ii,Ii) = ik; %% Fourier coefficients of \kappa
+        if (i == 1) || (i == N)
+            KD(Ii,Ii) = d*delta*vr^2/(v0*li)*ik;
+        end
     end
 
     Z = zeros(NN*N);
-    mat = -[kron(IN,O), Z; Z, kron(IN,O)]  - 1i*[Z, iK; -kron(GCM,INN), Z]; % Kroenecker product to get the RHS matrix
+    mat = -[kron(IN,O), Z; Z, kron(IN,O)]  - 1i*[Z, iK; -kron(GCM,INN), KD]; % Kroenecker product to get the RHS matrix
 
-    w_out = eigs(mat,2*N,'smallestabs'); % The eigenvalues of "mat" are approximately \omega + n\Omega for |n| < N_fouier. Taking the smallest eigenvalues corresponds to n = 0.
-    w_out = sort(w_out);
+    w_out = eig(mat);%,2*N,'smallestabs'); % The eigenvalues of "mat" are approximately \omega + n\Omega for |n| < N_fouier. Taking the smallest eigenvalues corresponds to n = 0.
+    w_out = sort(mink(w_out,2*N));
 end
