@@ -4,7 +4,7 @@ format long
 
 % Settings for the material's structure
 k_tr = 4; % truncation parameters as in remark 3.3
-N = 6; % number of the resonator
+N = 1; % number of the resonator
 spacing = 10; lij = ones(1,N-1).*spacing; % spacing between the resonators
 len = 2; li = ones(1,N).*len; % length of the resonator
 L = sum(li)+sum(lij); % length of the unit cell
@@ -103,7 +103,7 @@ w_epsk = zeros(1,length(all_epsk));
 % fig = figure();
 figure(1)
 hold on
-subplot(1,3,3)
+subplot(1,3,1)
 
 for idx = 1:2*N
 
@@ -111,7 +111,7 @@ for idx = 1:2*N
     change_val = [];
     val_old = all_epsk(1);
 
-    w_res = @(epsilon_kappa) imag(omega_epsk(epsilon_kappa,li,Omega,phase_kappa,delta,vr,v0,lij,idx));
+    w_res = @(epsilon_kappa) imag(omega_epsk(epsilon_kappa,li,Omega,phase_kappa,delta,vr,v0,lij,idx,k_tr));
 
     for i = 1:length(all_epsk)
         w_epsk(i) = w_res(all_epsk(i));
@@ -131,11 +131,11 @@ for idx = 1:2*N
 
 end
 
-%     % plot exact solutions
-%     hold on
-%     const = -2*1i*vr^2*delta/(li*v0);
-%     w_epsk_exact = const./sqrt(1-all_epsk.^2);
-%     plot(all_epsk,imag(w_epsk_exact),'r--',markersize=1,linewidth=2)
+    % plot exact solutions
+    hold on
+    const = -2*1i*vr^2*delta/(li*v0);
+    w_epsk_exact = const./sqrt(1-all_epsk.^2);
+    plot(all_epsk,imag(w_epsk_exact),'r--',markersize=1,linewidth=2)
 
 
 
@@ -165,7 +165,7 @@ function [imag_w_res] = find_imagzero(epsilon_kappa,li,Omega,phase_kappa,delta,v
 
 end
 
-function [w_res] = omega_epsk(epsilon_kappa,li,Omega,phase_kappa,delta,vr,v0,lij,idx)
+function [w_res] = omega_epsk(epsilon_kappa,li,Omega,phase_kappa,delta,vr,v0,lij,idx,k_tr)
 % FIND_IMAGZERO function whose root must be found in order to determine setting st imaginary part of resonant frequency is zero
 %   epsilon_kappa:  time-modulation amplitude of kappa
 %   li:             size of resonators
@@ -179,11 +179,13 @@ function [w_res] = omega_epsk(epsilon_kappa,li,Omega,phase_kappa,delta,vr,v0,lij
     N = length(phase_kappa);
     if N > 1
         C = make_capacitance_finite(N,lij); % capacitance matrix
-        w_res = get_capacitance_approx_hot(epsilon_kappa,li,Omega,phase_kappa,delta,C,vr,v0); % subwavelength resonant frequencies
+%         w_res = get_capacitance_approx_hot(epsilon_kappa,li,Omega,phase_kappa,delta,C,vr,v0); % subwavelength resonant frequencies
+        w_res = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,C,k_tr);
         [val,i] = sort(imag(w_res)); w_res = w_res(i); % sort omegas according to the real part
         [val,i] = max(imag(w_res));
     else
         w_res = [get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,li,delta,vr,v0),0]; % non-zero subwavelength resonant frequency
+        w_res = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,0,k_tr);
     end
     w_res = w_res(idx);
 
