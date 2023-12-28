@@ -239,8 +239,9 @@ for epsilon_kappa = eks
     for len = li_s
         li = ones(1,N).*len;
         xm = 0; xp = xm+li(1);
-        w_out = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0);
-        w_res(j,2) = w_out;
+%         w_out = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0);
+        w_out = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,0,k_tr);
+        w_res(j,2) = w_out(2);
         j = j+1;
     end
     
