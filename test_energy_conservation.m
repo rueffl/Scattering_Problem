@@ -40,15 +40,13 @@ for j = 1:N
 end
 
 % Calculate subwavelength resonant frequency
-if N == 1
-%     w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0); % non-zero subwavelength resonant frequency
-    w_muller = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,0,k_tr);
-    w_res = w_muller(2);
-else
+if N > 1
     C = make_capacitance_finite(N,lij); % capacitance matrix
-%     w_muller = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,len,v0,vr,C,k_tr); % subwavelength resonant frequencies
-    w_muller = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,C,k_tr);
-    w_res = w_muller(real(w_muller)>=0); % positive subwavelength resonant frequencies
+    w_cap = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,C,k_tr); % subwavelength resonant frequencies
+    w_res = w_cap(real(w_cap)>=0); % positive subwavelength resonant frequencies
+else
+    w_cap = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0);
+    w_res = w_cap;
 end
 
 %% Iterate over omega
@@ -95,10 +93,10 @@ end
 % legend('show',interpreter='latex',fontsize=18)
 
 figure(1)
-subplot(1,3,3)
+subplot(1,3,1)
 hold on
 plot(all_w,E(1:end),'-k','MarkerSize',8,'LineWidth',2)
-for w = w_res
+for w = w_cap
     plot(w.*ones(1,100),linspace(min(E(1:end))-0.0005,max(E(1:end))+0.0005,100),'--','color',[.5 .5 .5],'MarkerSize',8,'LineWidth',1.5)
 end
 ylim([min(E(1:end))-0.000005,max(E(1:end))+0.000005])
@@ -135,15 +133,13 @@ for epsilon_kappa = all_epsk
     end
     
     % Calculate subwavelength resonant frequency
-    if N == 1
-    %     w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0); % non-zero subwavelength resonant frequency
-        w_muller = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,0,k_tr);
-        w_res = w_muller(2);
-    else
+    if N > 1
         C = make_capacitance_finite(N,lij); % capacitance matrix
-    %     w_muller = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,len,v0,vr,C,k_tr); % subwavelength resonant frequencies
-        w_muller = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,C,k_tr);
-        w_res = w_muller(real(w_muller)>=0); % positive subwavelength resonant frequencies
+        w_cap = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,C,k_tr); % subwavelength resonant frequencies
+        w_res = w_cap(real(w_cap)>=0); % positive subwavelength resonant frequencies
+    else
+        w_cap = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0);
+        w_res = w_cap;
     end
     w_op = w_res(1)+0.0002; w0 = w_op;
     k_op = w_op/v0; k0 = w0/v0;
@@ -250,8 +246,8 @@ zlabel('$E$',interpreter='latex')
 
 all_epsk = linspace(0,0.95,100);
 E = zeros(length(all_epsk),1); it = 1; ik = 1;
-figure(3)
-% subplot(1,3,3)
+figure(1)
+subplot(1,3,3)
 hold on
 c_map = parula(5);
 
@@ -296,15 +292,13 @@ for epsilon_kappa = all_epsk
     end
     
     % Calculate subwavelength resonant frequency
-    if N == 1
-    %     w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0); % non-zero subwavelength resonant frequency
-        w_muller = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,0,k_tr);
-        w_res = w_muller(2);
-    else
+    if N > 1
         C = make_capacitance_finite(N,lij); % capacitance matrix
-    %     w_muller = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,len,v0,vr,C,k_tr); % subwavelength resonant frequencies
-        w_muller = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,C,k_tr);
-        w_res = w_muller(real(w_muller)>=0); % positive subwavelength resonant frequencies
+        w_cap = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,C,k_tr); % subwavelength resonant frequencies
+        w_res = w_cap(real(w_cap)>=0); % positive subwavelength resonant frequencies
+    else
+        w_cap = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0);
+        w_res = w_cap;
     end
     w_op = real(w_res(1)+0.02); w0 = w_op;
     k_op = w_op/v0; k0 = w0/v0;
@@ -333,7 +327,7 @@ for epsilon_kappa = all_epsk
 end
 
 % Plot results
-plot(all_epsk,E,'-','Color',c_map(3,:),'DisplayName',strcat('$N=\,\,$',num2str(N)),'MarkerSize',8,'LineWidth',2)
+plot(all_epsk,E,'-','Color','k','DisplayName',strcat('$N=\,\,$',num2str(N)),'MarkerSize',8,'LineWidth',2)
 plot(linspace(0,0.99,50),ones(1,50),'--','Color',[.5 .5 .5],'HandleVisibility','off','MarkerSize',8,'LineWidth',2)
 xlabel('$\varepsilon_{\kappa}$',Interpreter='latex',FontSize=18)
 ylabel('$E$',Interpreter='latex',FontSize=18)
