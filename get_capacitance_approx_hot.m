@@ -32,10 +32,10 @@ function out = make_invM2(t,delta,vr,v0,li,epsilon_kappa,phase_kappa,Omega)
 %   Omega:          frequency of the modulation of kappa
 
     N = length(phase_kappa); % number of resonators
-    kappa = @(t) 1./(1+epsilon_kappa.*cos(Omega.*t+phase_kappa)); % function kappa(t)
+    invkappa = @(t) 1+epsilon_kappa.*cos(Omega.*t+phase_kappa); % function kappa(t)
     D = zeros(N,N); D(1,1) = 1; D(N,N) = 1; % matrix D
     L = diag(li); % matrix L
-    Kt = diag(kappa(t));
+    Kt = diag(invkappa(t));
     Z = zeros(N,N);
     Id = eye(N);
     m2 = [Id, Z; D./v0, -L*Kt./(delta*vr^2)]; % matrix M_2
