@@ -138,7 +138,7 @@ delta = 0.0001; % small contrast parameter
 t = 0; % time
 
 vr = 1; % wave speed inside the resonators
-v0 = 1; % wave speed outside the resonators
+v0 = 2; % wave speed outside the resonators
 
 % Define evaluation points
 len_xs = 800;
@@ -180,12 +180,12 @@ for epsilon_kappa = all_epsk
     if N > 1
         C = make_capacitance_finite(N,lij); % capacitance matrix
         w_muller = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,C,k_tr); % subwavelength resonant frequencies
+        w_res = w_muller(real(w_muller)>=0); % positive subwavelength resonant frequencies
     else
         w_muller = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0);
+        w_res = w_muller(1);
     end
-    w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len(1),delta,vr,v0);
-%     w_res = w_muller(real(w_muller)>=0); % positive subwavelength resonant frequencies
-    w_op = w_res(1)+ 0.0002; % operating frequency
+    w_op = real(w_res(end)+ 0.0002); % operating frequency
     w0 = w_op;%real(w_res(1))+0.02; % quasifrequency of incident wave
     k_op = w_op/v0; % operating wave number outside of the resonator
     k0 = w0/v0; % wave number of incident frequency
@@ -289,7 +289,7 @@ for i = 1:(N-1)
     phase_kappa(i+1) = pi/i;
     phase_rho(i+1) = pi/i;
 end
-epsilon_kappa = 0.4;
+epsilon_kappa = 0.9;
 epsilon_rho = 0;
 rs = []; % Fourier coefficients of 1/rho
 ks = []; % Fourier coefficients of 1/kappa
@@ -311,12 +311,12 @@ for t = ts
     if N > 1
         C = make_capacitance_finite(N,lij); % capacitance matrix
         w_muller = get_capacitance_approx_spec(epsilon_kappa,phase_kappa,Omega,delta,li,v0,vr,C,k_tr); % subwavelength resonant frequencies
+        w_res = w_muller(real(w_muller)>=0); % positive subwavelength resonant frequencies
     else
         w_muller = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0);
+        w_res = w_muller(1);
     end
-    w_res = w_muller(real(w_muller)>=0); % positive subwavelength resonant frequencies
-    w_res = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len(1),delta,vr,v0);
-    w_op = w_res(1)+ 0.0002; % operating frequency
+    w_op = real(w_res(end)+ 0.0002); % operating frequency
     w0 = w_op;%real(w_res(1))+0.02; % quasifrequency of incident wave
     k_op = w_op/v0; % operating wave number outside of the resonator
     k0 = w0/v0; % wave number of incident frequency
@@ -345,12 +345,12 @@ for t = ts
     subplot(1,2,1)
     set(gca,'FontSize',14)
     hold on
-    plot(xs,real(us_eval_x),'-','DisplayName',strcat('$t=$',num2str(t)),'Color',c_map(ic,:),markersize=8,linewidth=2)
+    plot(xs,real(us_eval_x),'-','DisplayName',strcat('$t=$ ',num2str(t)),'Color',c_map(ic,:),markersize=8,linewidth=2)
     
     subplot(1,2,2)
     set(gca,'FontSize',14)
     hold on
-    plot(xs,imag(us_eval_x),'-','DisplayName',strcat('$t=$',num2str(t)),'Color',c_map(ic,:),markersize=8,linewidth=2)
+    plot(xs,imag(us_eval_x),'-','DisplayName',strcat('$t=$ ',num2str(t)),'Color',c_map(ic,:),markersize=8,linewidth=2)
     
     for i = 1:N
         for j = 1:len_zs
