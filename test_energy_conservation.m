@@ -3,7 +3,7 @@ format long
 
 % Settings for the material's structure
 k_tr = 4; % truncation parameters as in remark 3.3
-N = 1; % number of the resonator
+N = 6; % number of the resonator
 spacing = 10; lij = ones(1,N-1).*spacing; % spacing between the resonators
 len = 2; li = ones(1,N).*len; % length of the resonator
 L = sum(li)+sum(lij); % length of the unit cell
@@ -92,14 +92,15 @@ end
 % ylabel('$|R_n|^2+|T_n|^2$',Interpreter='latex',FontSize=18)
 % legend('show',interpreter='latex',fontsize=18)
 
-figure(1)
-subplot(1,3,1)
+figure(2)
+subplot(1,3,3)
 hold on
 plot(all_w,E(1:end),'-k','MarkerSize',8,'LineWidth',2)
+ylim([0.9995,1.01])
 for w = w_cap
-    plot(w.*ones(1,100),linspace(min(E(1:end))-0.0005,max(E(1:end))+0.0005,100),'--','color',[.5 .5 .5],'MarkerSize',8,'LineWidth',1.5)
+    plot(w.*ones(1,100),linspace(0.9995,1.01,100),'--','color',[.5 .5 .5],'MarkerSize',8,'LineWidth',1.5)
 end
-ylim([min(E(1:end))-0.000005,max(E(1:end))+0.000005])
+% ylim([min(E(1:end))-0.000005,max(E(1:end))+0.000005])
 xlabel('$\omega$',Interpreter='latex',FontSize=18)
 ylabel('$E$',Interpreter='latex',FontSize=18)
 
@@ -141,7 +142,7 @@ for epsilon_kappa = all_epsk
         w_cap = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0);
         w_res = w_cap;
     end
-    w_op = w_res(1)+0.0002; w0 = w_op;
+    w_op = w_res(end)+0.0002; w0 = w_op;
     k_op = w_op/v0; k0 = w0/v0;
     
     
@@ -247,13 +248,13 @@ zlabel('$E$',interpreter='latex')
 all_epsk = linspace(0,0.95,100);
 E = zeros(length(all_epsk),1); it = 1; ik = 1;
 figure(1)
-subplot(1,3,3)
+subplot(1,3,1)
 hold on
 c_map = parula(5);
 
 % Settings for the material's structure
 k_tr = 4; % truncation parameters as in remark 3.3
-N = 6; % number of the resonator
+N = 1; % number of the resonator
 spacing = 10; lij = ones(1,N-1).*spacing; % spacing between the resonators
 len = 2; li = ones(1,N).*len; % length of the resonator
 L = sum(li)+sum(lij); % length of the unit cell
@@ -300,7 +301,7 @@ for epsilon_kappa = all_epsk
         w_cap = get_capacitance_approx_spec_im_N1_1D(epsilon_kappa,Omega,len,delta,vr,v0);
         w_res = w_cap;
     end
-    w_op = real(w_res(1)+0.02); w0 = w_op;
+    w_op = real(w_res(end)+0.02); w0 = w_op;
     k_op = w_op/v0; k0 = w0/v0;
     
     
